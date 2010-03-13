@@ -5,5 +5,5 @@ ROOT=/web/{{ project }}
 export PYTHONPATH="$ROOT:$ROOT/lib/python2.6/site-packages"
 export DJANGO_SETTINGS_MODULE={{ project }}.settings
 exec 2>&1
-exec gunicorn -b unix:/tmp/gunicorn.sock -u web -g web \
-    {{ project }}.wsgi:application
+exec gunicorn -b unix:/tmp/gunicorn.{{ project }}.sock -workers 1 \
+    -u web -g web {{ project }}.wsgi:application

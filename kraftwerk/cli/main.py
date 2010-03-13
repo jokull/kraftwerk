@@ -8,7 +8,18 @@ from kraftwerk import templates_dir
 from kraftwerk.cli import commands
 from kraftwerk.cli.parser import parser
 from kraftwerk.config import Config, ConfigNotFound
-    
+
+def create_config(path):
+    provider = raw_input('Provider [rackspace/ec2_eu_west]: ')
+    user     = raw_input('Your provider user/accesskey: ')
+    secret   = raw_input('Your provider secret: ')
+    image_id = raw_input('Your default Ubuntu image: ')
+    size_id  = raw_input('Your default node size: ')
+    tpl = config.templates.get_template('.kraftwerk.yaml')
+    with open(path, 'w') as fp:
+        fp.write(tpl.render({'user': user, 'secret': secret,
+            'image_id': image_id, 'size_id': size_id, 'provider': provider }))
+
 def main(cmd_args=None):
     """The main entry point for running the kraftwerk CLI."""
     
@@ -17,20 +28,12 @@ def main(cmd_args=None):
     else:
         args = parser.parse_args()
     
-    try:
-        args.config = os.path.abspath(args.config)
-        
-        if not os.path.exists(args.config):
-            print 'It looks like this is your first time running' \
-                  'kraftwerk'
-            # TODO query for config params
-            template = os.path.join(templates_dir, 
-                os.path.basename(args.config))
-            shutil.copy(template, args.config)
-        config = Config.for_file(args.config)
-    except Exception, exc:
-        print str(exc)
-        raise ConfigNotFound("Couldn't locate kraftwerk config.")
+    args.config = os.path.abspath(args.config)
+    if not os.path.exists(args.config):
+        print 'It looks like this is your first time running' \
+              'kraftwerk'
+        create_config(args.config)
+    config = Config.for_file(args.config)
     
     logging.getLogger('kraftwerk').setLevel(getattr(logging, args.log_level))
     

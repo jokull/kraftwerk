@@ -1,8 +1,14 @@
 import copy
 import yaml
 import os
+import jinja2
 
-path = os.path.join(os.path.expanduser('~'), '.kraftwerk')
+from libcloud.types import Provider
+from libcloud.providers import get_driver as libcloud_get_driver
+
+path = os.path.join(os.path.expanduser('~'), '.kraftwerk.yaml')
+
+from . import templates_dir
 
 class ConfigNotFound(Exception):
     """The configuration file was not found."""
@@ -49,15 +55,18 @@ class Config(dict):
         # Without a filename:
         config = Config(None, {'meta': {'root': '/path/to/wiki/root/'}, ...})
     
+    Config additionally passes the template environment and the libcloud 
+    driver.
+    
     """
     
     __metaclass__ = ConfigMeta
     
     def __init__(self, config_file, config):
         super(Config, self).__init__(flatten(config))
-        
+        self.driver = self._driver
+        self.templates = self._templates
         self['meta.config-file'] = config_file
-        self['meta.root'] = os.path.dirname(config_file)
     
     def __getitem__(self, key):
         try:
@@ -75,6 +84,17 @@ class Config(dict):
         if (key not in self):
             return # fail silently.
         return dict.__delitem__(self, key)
+    
+    @property
+    def _driver(self):
+        provider = self['provider']
+        DriverClass = libcloud_get_driver(getattr(Provider, provider.upper()))
+        return DriverClass(self['user'], self['secret'])
+    
+    @property
+    def _templates(self):
+        # Could use jinja2.ChoiceLoader to allow user to overwrite templates
+        return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
     
     @classmethod
     def for_file(cls, filename):

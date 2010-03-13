@@ -1,5 +1,0 @@
-provider:   ec2_eu_west
-username:   AKIAICPKVQN557NP22YQ
-secret:     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
-image_name: ami-2fc2e95b
-size_id:    m1.small

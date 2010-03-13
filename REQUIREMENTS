@@ -1,3 +1,4 @@
 argparse
 PyYAML
 Jinja2
+libcloud

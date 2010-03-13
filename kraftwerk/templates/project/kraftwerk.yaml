@@ -1,0 +1,5 @@
+version: 0
+services:
+    - postgresql
+    - redis
+    - uploads
