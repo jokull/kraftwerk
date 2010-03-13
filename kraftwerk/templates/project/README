@@ -1,0 +1,19 @@
+You can version control however you want. Deployment uses rsync.
+
+Your project must follow these conventions:
+
+  + Top directory name is the SITE_ROOT; a Python virtualenv
+  + Underneath SITE_ROOT there should be a code directory with the 
+    same name - kraftwerk refers to it as PROJECT_ROOT
+  + PROJECT_ROOT must have a wsgi.py that defines the WSGI 
+    application callable
+  + SITE_ROOT must have a service directory with an executable `run` 
+    file that the runit utility uses to daemonize and run the WSGI
+    server process - you may define the number of workers, and export
+    environment variables here
+  + SITE_ROOT and PROJECT_ROOT must have the same name
+
+In short: kraftwerk expects this structure:
+
+ - /{{ project }}/{{ project }}/wsgi.py
+ - /{{ project }}/service/run (chmod +x)
