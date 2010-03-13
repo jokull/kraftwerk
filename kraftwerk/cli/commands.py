@@ -6,6 +6,8 @@ from functools import wraps
 
 import jinja2
 import virtualenv
+from libcloud.drivers import ec2, rackspace
+# Add as you test support for more providers
 
 import kraftwerk
 from kraftwerk.config import path as config_path
@@ -113,7 +115,7 @@ def create_node(config, args):
         pubkey_paths.append(config["pubkey"])
     for path in pubkey_paths:
         if os.path.exists(path):
-            print 'SSH public key: %s' % path
+            log.info('SSH public key: %s' % path)
             with open(path) as fp:
                 pubkey = fp.read().strip()
             break
@@ -139,22 +141,23 @@ def create_node(config, args):
             size = s
             break
     
-    from libcloud.drivers import ec2, rackspace
-    # Add as you test support for more providers
-    
     if isinstance(config.driver, ec2.EC2NodeDriver):
         extra = dict(userdata="""#!/bin/bash
 echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         if not 'keyname' in config:
             raise ValueError, 'ERROR: EC2 "keyname" not found in your config'
         extra.update(keyname=config["keyname"])
+        log.debug("ubuntu user will be active and accessible with \
+            your %s key" % config["keyname"])
         if 'securitygroup' in config:
             extra.update(securitygroup=config["securitygroup"])
     elif isinstance(config.driver, rackspace.RackspaceNodeDriver):
         extra = dict(files={'/root/.ssh/authorized_keys': pubkey})
     
-    node = config.driver.create_node(name=args.hostname,
+    create_info = dict(name=args.hostname,
         image=image, size=size, **extra)
+    log.debug("Creating node: %s" % pprint.pprint(create_info))
+    node = config.driver.create_node(create_info)
     public_ip = node.public_ip[0]
     
     # Poll the node until it has a public ip
@@ -169,13 +172,12 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         from socket import gethostbyname
         public_ip = gethostbyname(public_ip)
     
-    print "Server ready at %s" % public_ip
+    log.info("Server ready at %s" % public_ip)
 
     if confirm('Create /etc/hosts entry?'):
         from kraftwerk.etchosts import set_etchosts
         set_etchosts(args.hostname, public_ip)
     
-        
 create_node.parser.add_argument('hostname', default=None,
     help="Hostname label for the node (optionally adds an entry to /etc/hosts for easy access)")
 create_node.parser.add_argument('--size-id',
