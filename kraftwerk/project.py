@@ -13,6 +13,9 @@ class Project(object):
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
     
+    def __unicode__(self):
+        return self.title
+    
     def load(self, node):
         # TODO
         pass
@@ -42,9 +45,13 @@ class Project(object):
         wsgi_app = getattr(wsgi_mod, wsgi_path[1])
         if not callable(wsgi_app):
             raise ValidationError, "WSGI application found but not a callable."
+        if not 'workers' in self.config:
+            raise ValidationError, "You must specify the number of workers for the WSGI server."
+        try: int(self.config['workers'])
+        except TypeError: raise ValidationError, "Workers value must be a number"
         return True
 
-    def rsync(self, dest, exclude=''):
+    def rsync(self, dest):
         cmd = ['rsync',
                '--recursive',
                '--links',         # Copy over symlinks as symlinks
@@ -54,9 +61,9 @@ class Project(object):
                '--rsh=ssh',       # Use ssh
                '--delete',        # Delete files thta aren't in the source dir
                '--compress',
-               '--exclude-from=%s' % exclude,
+               '--exclude-from=%s' % os.path.join(self.path, "rsync_exclude.txt"),
                '--progress',
                '--quiet',
                self.src_path, dest]
-        proc = subprocess.Popen(cmd)
-        proc.communicate()
+        proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+        return proc.communicate()

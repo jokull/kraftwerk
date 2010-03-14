@@ -183,23 +183,15 @@ create_node.parser.add_argument('--size-id',
 create_node.parser.add_argument('--image-name', 
     help="Ubuntu image. Defaults to user config. (ex. EC2 AMI image id)")
 
-SETUP_CMD = """adduser --disabled-password --gecos=none web
-mkdir -p /web && cp -R /root/.ssh /web/.
-chown -R web:web /web
-apt-get -q update
-apt-get -y -qq install nginx postgresql python-psycopg2 python-setuptools python-imaging python-lxml python-numpy rsync build-essential subversion git-core unzip zip curl wget redis-server runit
-easy_install -U gunicorn mercurial
-/usr/sbin/runsvdir-start &>/dev/null & # Background and quiet
-mkdir -p /var/service"""
-
 @command
 def setup_node(config, args):
     """Install software and prepare a node for kraftwerk action."""
     node = getattr(args, "node", config.get("default-node"))
     log = logging.getLogger('kraftwerk.setup-node')
     ssh_host = 'root@%s' % node
+    tpl = config.templates.get_template("server_setup.sh")
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
-        ssh_host, SETUP_CMD])
+        ssh_host, tpl.render(dict(config=config))])
     proc.communicate()
 
 setup_node.parser.add_argument('node', default=None, 
@@ -212,36 +204,45 @@ def setup_project(config, args):
     and once for each service. Kraftwerk detects a first-time 
     setup and runs service setup."""
     log = logging.getLogger('kraftwerk.setup-project')
-    # Create folders
+    # Check if first setup
     # Loop through services setup
     # 
-    node = getattr(args, "node", config.get("default-node"))
-    if node is None:
-        raise ValueError, 'Server node must be supplied as an ' \
-                          'argument or in user config.'
     
     project = Project(args.project_path)
     try:
         project.is_valid()
     except Exception, exc:
-        print exc
+        print "Project config did not validate: %s" % exc
         return
-    
-    exclude = config.templates.get_template('project/rsync_exclude.txt').render()
-    destination = os.path.join('%s:/web/%s/%s' % 
-        (node, project.title, project.title))
-    log.info("Syncing project")
-    project.rsync(destination, exclude)
-    
+        
+    node = getattr(args, "node", config.get("default-node"))
+    if node is None:
+        raise ValueError, 'Server node must be supplied as an ' \
+                          'argument or in user config.'
     ssh_host = 'root@%s' % node
+    proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no', 
+        ssh_host, 'stat /etc/nginx/sites-enabled/%s' % project.title], 
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc.communicate()
+    new = bool(proc.returncode)
+    
+    # Sync codebase over with the web user
+    exclude = config.templates.get_template('project/rsync_exclude.txt').render()
+    destination = os.path.join('%s:/web/%s/' % 
+        ("web@%s" % node, project.title))
+    stdout, stderr = project.rsync(destination)
+    if stderr:
+        log.error("Sync error: %s" % stderr)
+        return
+    log.info("Synced project %s to %s" % (project.title, node))
+    
     tpl = config.templates.get_template('project_setup.sh')
-    cmd = tpl.render(dict(project=project, 
+    cmd = tpl.render(dict(project=project, new=new, restart=args.restart,
                           services=project.services(node)))
-    # print tpl.render(dict(project=project))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
     services = project.services(node)
-    if not args.no_services:
+    if not args.no_service_setup:
         for service in services:
             proc = subprocess.Popen(['ssh', ssh_host, 
                 service.setup_script])
@@ -251,9 +252,45 @@ setup_project.parser.add_argument('--node', default=None,
     help="Server node to interact with. ")
 setup_project.parser.add_argument('--project-path', default=os.getcwd(), 
     help="Path to the project you want to set up. Defaults to current directory.")
-setup_project.parser.add_argument('--no-services', 
+setup_project.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
     help="With this hook kraftwerk overwrites the basic config files but " \
          "does not attempt to set up project services.")
+setup_project.parser.add_argument('--restart',
+    default=False, action='store_true',
+    help="Bring down and start the site WSGI service again. Default is to send" \
+         "a HUP signal to the process to reload it. ")
 
+@command
+def destroy_project(config, args):
+    """Remove project from a node with all related services and 
+    files."""
+    log = logging.getLogger('kraftwerk.destroy-project')
+    # Check if first setup
+    # Loop through services setup
+    # 
+    
+    project = Project(args.project_path)
+    try:
+        project.is_valid()
+    except Exception, exc:
+        print "Project config did not validate: %s" % exc
+        return
+        
+    node = getattr(args, "node", config.get("default-node"))
+    if node is None:
+        raise ValueError, 'Server node must be supplied as an ' \
+                          'argument or in user config.'
+    ssh_host = 'root@%s' % node
+    tpl = config.templates.get_template("project_destroy.sh")
+    proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
+        ssh_host, tpl.render(dict(project=project))], 
+        stdout=subprocess.PIPE)
+    proc.communicate()
+    log.info("Project %s removed from node %s" % \
+        (project.title, node))
 
+destroy_project.parser.add_argument('--node', default=None, 
+    help="Server node to interact with. ")
+destroy_project.parser.add_argument('--project-path', default=os.getcwd(), 
+    help="Path to the project you want to set up. Defaults to current directory.")

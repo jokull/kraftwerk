@@ -1,19 +1,34 @@
-{% if new %}
+PROJECT="{{ project.title }}"
+SITE_SERVICE="/etc/service/$PROJECT"
 
+{% if new -%}
+virtualenv /web/$PROJECT
+chown web:web /web/$PROJECT
+/etc/init.d/nginx start
+{%- endif %}
+
+{% if project.config.packages %}
+/web/$PROJECT/bin/pip install {{ project.config.packages }}
 {% endif %}
 
-mkdir -p /web/{{ project.title }}
-chown web:web /web/{{ project.title }}
-cat > /etc/nginx/sites-enabled/{{ project.title }} << "EOF"
+cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"
 {% include 'nginx.conf' %}
-
 EOF
-/etc/init.d/nginx reload
-/etc/init.d/nginx start
-mkdir -p /var/service/{{ project.title }}
-cat > /var/service/{{ project.title }}/run << "EOF"
+
+mkdir -p /var/service/$PROJECT
+cat > /var/service/$PROJECT/run << "EOF"
 {% include 'gunicorn.sh' %}
-
 EOF
-chmod +x /var/service/run
-ln -s /var/service/{{ project.title }} /etc/service/{{ project.title }}
+
+{% if new -%}
+ln -s /var/service/$PROJECT $SITE_SERVICE
+chmod +x $SITE_SERVICE/run
+{% else %}
+  {%- if restart -%}
+sv restart $SITE_SERVICE
+  {%- else %}
+sv hup $SITE_SERVICE
+  {%- endif -%}
+{%- endif %}
+
+/etc/init.d/nginx reload
