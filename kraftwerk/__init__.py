@@ -1,9 +1,11 @@
 import logging
 from os.path import join, dirname
+import jinja2
 
 __version__ = '0.0'
 
-templates_dir = join(dirname(__file__), 'templates')
+templates_root = join(dirname(__file__), 'templates')
+templates = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_root))
 
 default_formatter = logging.Formatter(
     u'%(name)s: %(levelname)s: %(message)s')

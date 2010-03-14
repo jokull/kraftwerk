@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import codecs, logging, os, pprint, sys, re, time
+import codecs, logging, os, pprint, sys, re, time, subprocess
 from random import choice
 from functools import wraps
 
-import jinja2
 import virtualenv
 from libcloud.drivers import ec2, rackspace
 # Add as you test support for more providers
@@ -14,6 +13,7 @@ from kraftwerk.config import path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
 from kraftwerk import etchosts
+from kraftwerk import services
 
 IP_RE = re.compile(r'(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})')
 
@@ -32,7 +32,6 @@ def command(function):
     
     return wrapper
 
-
 ## Utilities
 
 @command
@@ -40,10 +39,10 @@ def show_config(config, args):
     """Pretty-print the current kraftwerk configuration."""
     pprint.pprint(config)
 
-def _project_template(config, title, project_root):
+def _copy_project(config, title, project_root):
     
     secret = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)])
-    start = os.path.join(kraftwerk.templates_dir, 'project')
+    start = os.path.join(kraftwerk.templates_root, 'project')
     
     for dirpath, dirnames, filenames in os.walk(start):
         # Copy template skeleton
@@ -61,7 +60,7 @@ def _project_template(config, title, project_root):
                     os.makedirs(dest_path)
                 else:
                     with codecs.open(dest_path, 'w', encoding='utf-8') as fp:
-                        tpl = config["templates"].get_template(os.path.join('project', rel))
+                        tpl = config.templates.get_template(os.path.join('project', rel))
                         fp.write(tpl.render({'project': title, 'secret': secret}))
 
 @command
@@ -95,9 +94,7 @@ def init(config, args):
     log.debug('mkdir %s/' % src_root)
     os.makedirs(src_root)
     
-    _project_template(config, args.title, project_root)
-    
-    log.info('Project initialization complete')
+    _copy_project(config, args.title, project_root)
     log.info('Your new project is at: %s' % project_root)
 
 init.parser.add_argument('title', default=None,
@@ -157,7 +154,7 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
     create_info = dict(name=args.hostname,
         image=image, size=size, **extra)
     log.debug("Creating node: %s" % pprint.pprint(create_info))
-    node = config.driver.create_node(create_info)
+    node = config.driver.create_node(**create_info)
     public_ip = node.public_ip[0]
     
     # Poll the node until it has a public ip
@@ -174,16 +171,72 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
     
     log.info("Server ready at %s" % public_ip)
 
-    if confirm('Create /etc/hosts entry?'):
+    if confirm("Create /etc/hosts entry?"):
         from kraftwerk.etchosts import set_etchosts
         set_etchosts(args.hostname, public_ip)
     
 create_node.parser.add_argument('hostname', default=None,
     help="Hostname label for the node (optionally adds an entry to /etc/hosts for easy access)")
 create_node.parser.add_argument('--size-id',
-    help="Specify the provider node size. Defaults to user config.")
+    help="Provider node size. Defaults to user config.")
 create_node.parser.add_argument('--image-name', 
-    help="Specify the node Ubuntu image. Defaults to user config.")
+    help="Ubuntu image. Defaults to user config. (ex. EC2 AMI image id)")
+
+SETUP_CMD = """adduser --disabled-password --gecos=none web
+mkdir -p /web && cp -R /root/.ssh /web/.
+chown -R web:web /web
+apt-get -q update
+apt-get -y -qq install nginx postgresql python-setuptools python-imaging python-lxml python-numpy rsync build-essential postfix subversion git-core unzip zip curl wget redis-server runit
+git clone git://github.com/benoitc/gunicorn.git /usr/local/src/gunicorn
+python /usr/local/src/gunicorn/setup.py install
+/usr/sbin/runsvdir-start&
+mkdir /var/service &> /dev/null"""
+
+@command
+def setup_node(config, args):
+    """Install software and prepare a node for kraftwerk action."""
+    node = getattr(args, "node", config.get("default-node"))
+    log = logging.getLogger('kraftwerk.setup-node')
+    ssh_host = 'root@%s' % node
+    proc = subprocess.Popen(['ssh', ssh_host, SETUP_CMD])
+    proc.communicate()
+
+setup_node.parser.add_argument('node', default=None, 
+    help="Path to the project you want to set up")
+
+from kraftwerk.project import Project
+
+@command
+def setup_project(config, args):
+    """Create a project container on a node. Setup all services required."""
+    log = logging.getLogger('kraftwerk.setup-project')
+    # Create folders
+    # Loop through services setup
+    # Setup services
+    node = getattr(args, "node", config.get("default-node"))
+    if node is None:
+        raise ValueError, 'Server node must be supplied as an argument or in conf'
+    
+    project = Project(args.project_path)
+    ssh_host = 'root@%s' % node
+    tpl = config.templates.get_template('project_setup.sh')
+    print tpl.render(dict(project=project))
+    proc = subprocess.Popen(['ssh', ssh_host, 
+        tpl.render(dict(project=project))])
+    print proc.communicate()
+    for service in project.config["services"]:
+        try:
+            mod = __import__('kraftwerk.services.' + service, fromlist=[''])
+        except ImportError:
+            log.info("%s is not supported" % service)
+        srvc = mod.Service(node, project)
+        proc = subprocess.Popen(['ssh', ssh_host, srvc.setup_script])
+        print proc.communicate()
+
+setup_project.parser.add_argument('--node', default=None, 
+    help="Path to the project you want to set up")
+setup_project.parser.add_argument('--project-path', default=os.getcwd(), 
+    help="Path to the project you want to set up. Defaults to current directory.")
 
 
 

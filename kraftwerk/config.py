@@ -8,7 +8,7 @@ from libcloud.providers import get_driver as libcloud_get_driver
 
 path = os.path.join(os.path.expanduser('~'), '.kraftwerk.yaml')
 
-from . import templates_dir
+from . import templates_root
 
 class ConfigNotFound(Exception):
     """The configuration file was not found."""
@@ -94,7 +94,10 @@ class Config(dict):
     @property
     def _templates(self):
         # Could use jinja2.ChoiceLoader to allow user to overwrite templates
-        return jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
+        loaders = [jinja2.FileSystemLoader(templates_root)]
+        if "templates" in self:
+            loaders.insert(0, jinja2.FileSystemLoader(self["templates"]))
+        return jinja2.Environment(loader=jinja2.ChoiceLoader(loaders))
     
     @classmethod
     def for_file(cls, filename):

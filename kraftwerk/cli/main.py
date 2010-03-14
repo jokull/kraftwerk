@@ -4,7 +4,6 @@ import logging
 import os, shutil
 import argparse
 
-from kraftwerk import templates_dir
 from kraftwerk.cli import commands
 from kraftwerk.cli.parser import parser
 from kraftwerk.config import Config, ConfigNotFound

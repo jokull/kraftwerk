@@ -26,6 +26,32 @@ be aware of how to serve static media.
 automation!
 + Easy to define complimentary processes (like worker daemons).
 
+Design notes
+------------
+
+Admin is the computer where kraftwerk is called. The admin 
+commissions and interacts with nodes. The admin uploads projects to 
+nodes.
+
+Server nodes are referred to by their hostname (can be anything because 
+kraftwerk touches your /etc/hosts). 
+
+Projects are referred to by their root folder name. 
+
+Server nodes should not require a kraftwerk library. What about 
+uploads? ...
+
+Services should be able to dump and load data per project. These
+actions are initiated by the admin.
+
+The kraftwerk cli is path aware. If executed inside a project 
+directory it can interact with that project.
+
+The init command creates an empty or almost empty WSGI Python 
+project. The user can configure a secondary project template 
+directory to overwrite templates. Currently kraftwerk only allows the
+user to overwrite files - not whole structures.
+
 Strategy
 --------
 
@@ -51,11 +77,13 @@ Ideal API
 # cd myproject
 # source bin/activate
 
-Server Tools
+Server Setup
 ------------
 
 runit, nginx, gunicorn, virtualenv
 Python stack: Crypto, PIL
+
+`web` user and a `/web` directory to contain project code and uploads
 
 Inspiration
 -----------
