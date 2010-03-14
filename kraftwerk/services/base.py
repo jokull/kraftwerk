@@ -20,3 +20,6 @@ class BaseService(object):
     def dump(self):
         raise NotImplementedError
     
+    def env(self):
+        return dict()
+    

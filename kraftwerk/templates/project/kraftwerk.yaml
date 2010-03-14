@@ -1,7 +1,10 @@
 version: 0
-domain: www.levis.com
+domain: www.{{ project.title }}.com
 aliases:
-    - levis.com
+    - {{ project.title }}.com
 services:
-    - postgresql
+    - postgres
     - files
+workers: 1
+wsgi: '{{ project.title }}.wsgi:application'
+packages: imagekit

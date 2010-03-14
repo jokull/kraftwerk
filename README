@@ -62,7 +62,22 @@ are commissioned from your client machine. Node interaction and
 commissioning is done with libcloud. 
 
 An admin YAML config file is saved in the user's home folder. The 
-user can specify libcloud access credentials
+user can specify libcloud access credentials.
+
+Projects have YAML config files that specify a number of things. Look
+at kraftwerk/kraftwerk/templates/project/kraftwerk.yaml for example
+parameters. The user can overwrite a number of things by specifying a 
+directory of config files. Kraftwerk uses template engine to generate
+shell scripts and project skeletons. User defined templates take 
+precedence in template selection. In the future whole project 
+skeleton structures could be overwritten in a clean fashion.
+
+Setup project vs. Deploy project
+--------------------------------
+
+Setup and deployment of projects is run from the same non-
+destructive command (setup-project). Kraftwerk detects new projects
+and runs setup for each defined service.
 
 Ideal API
 ---------

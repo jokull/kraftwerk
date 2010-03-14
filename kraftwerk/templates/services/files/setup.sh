@@ -1,3 +1,3 @@
-mkdir /web/{{ project.title }}/files > /dev/null
-chmod 755 /web/{{ project.title }}/files
-chown web:web /web/{{ project.title }}/files
+mkdir -p /web/{{ project.title }}/uploads
+chmod 755 /web/{{ project.title }}/uploads
+chown web:web /web/{{ project.title }}/uploads

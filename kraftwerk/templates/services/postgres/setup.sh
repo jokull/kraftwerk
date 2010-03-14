@@ -1,3 +1,3 @@
-su postgres createdb -E UTF8 {{ project.title }} -e
-su postgres createuser {{ project.title }} -e
-su postgres psql -c GRANT ALL PRIVILEGES ON DATABASE {{ project.title }} TO {{ project.title }}
+su postgres -c "createdb --echo --encoding UTF8 {{ project.title }}"
+su postgres -c "createuser --echo --no-superuser --no-createdb --createrole {{ project.title }}"
+su postgres -c "psql -c 'GRANT ALL PRIVILEGES ON DATABASE {{ project.title }} TO {{ project.title }}'"

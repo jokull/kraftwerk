@@ -9,6 +9,7 @@ from libcloud.drivers import ec2, rackspace
 # Add as you test support for more providers
 
 import kraftwerk
+from kraftwerk.project import Project
 from kraftwerk.config import path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
@@ -186,11 +187,10 @@ SETUP_CMD = """adduser --disabled-password --gecos=none web
 mkdir -p /web && cp -R /root/.ssh /web/.
 chown -R web:web /web
 apt-get -q update
-apt-get -y -qq install nginx postgresql python-setuptools python-imaging python-lxml python-numpy rsync build-essential postfix subversion git-core unzip zip curl wget redis-server runit
-git clone git://github.com/benoitc/gunicorn.git /usr/local/src/gunicorn
-python /usr/local/src/gunicorn/setup.py install
-/usr/sbin/runsvdir-start&
-mkdir /var/service &> /dev/null"""
+apt-get -y -qq install nginx postgresql python-psycopg2 python-setuptools python-imaging python-lxml python-numpy rsync build-essential subversion git-core unzip zip curl wget redis-server runit
+easy_install -U gunicorn mercurial
+/usr/sbin/runsvdir-start &>/dev/null & # Background and quiet
+mkdir -p /var/service"""
 
 @command
 def setup_node(config, args):
@@ -198,49 +198,62 @@ def setup_node(config, args):
     node = getattr(args, "node", config.get("default-node"))
     log = logging.getLogger('kraftwerk.setup-node')
     ssh_host = 'root@%s' % node
-    proc = subprocess.Popen(['ssh', ssh_host, SETUP_CMD])
+    proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
+        ssh_host, SETUP_CMD])
     proc.communicate()
 
 setup_node.parser.add_argument('node', default=None, 
     help="Path to the project you want to set up")
 
-from kraftwerk.project import Project
-
 @command
 def setup_project(config, args):
-    """Create a project container on a node. Setup all services required."""
+    """Create a project container on a node. Setup all services 
+    required. An SSH process is called out once for basic config
+    and once for each service. Kraftwerk detects a first-time 
+    setup and runs service setup."""
     log = logging.getLogger('kraftwerk.setup-project')
     # Create folders
     # Loop through services setup
-    # Setup services
+    # 
     node = getattr(args, "node", config.get("default-node"))
     if node is None:
         raise ValueError, 'Server node must be supplied as an ' \
-                          'argument or in user config'
+                          'argument or in user config.'
     
     project = Project(args.project_path)
+    try:
+        project.is_valid()
+    except Exception, exc:
+        print exc
+        return
+    
+    exclude = config.templates.get_template('project/rsync_exclude.txt').render()
+    destination = os.path.join('%s:/web/%s/%s' % 
+        (node, project.title, project.title))
+    log.info("Syncing project")
+    project.rsync(destination, exclude)
+    
     ssh_host = 'root@%s' % node
     tpl = config.templates.get_template('project_setup.sh')
-    tpl.render(dict(project=project))
-    proc = subprocess.Popen(['ssh', ssh_host, 
-        tpl.render(dict(project=project))])
+    cmd = tpl.render(dict(project=project, 
+                          services=project.services(node)))
+    # print tpl.render(dict(project=project))
+    proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
-    for service in project.config["services"]:
-        try:
-            mod = __import__('kraftwerk.services.' + service, fromlist=[''])
-        except ImportError:
-            log.info("%s is not supported" % service)
-        srvc = mod.Service(node, project)
-        proc = subprocess.Popen(['ssh', ssh_host, srvc.setup_script])
-        print proc.communicate()
+    services = project.services(node)
+    if not args.no_services:
+        for service in services:
+            proc = subprocess.Popen(['ssh', ssh_host, 
+                service.setup_script])
+            proc.communicate()
 
 setup_project.parser.add_argument('--node', default=None, 
     help="Server node to interact with. ")
 setup_project.parser.add_argument('--project-path', default=os.getcwd(), 
     help="Path to the project you want to set up. Defaults to current directory.")
-
-
-
-
+setup_project.parser.add_argument('--no-services', 
+    default=False, action='store_true',
+    help="With this hook kraftwerk overwrites the basic config files but " \
+         "does not attempt to set up project services.")
 
 

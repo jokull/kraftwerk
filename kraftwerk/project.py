@@ -1,11 +1,15 @@
-import os
+import os, subprocess, sys
 import yaml
+
+class ValidationError(Exception):
+    pass
 
 class Project(object):
     
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.title = os.path.basename(self.path)
+        self.src_path = os.path.join(self.path, self.title)
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
     
@@ -16,10 +20,31 @@ class Project(object):
     def dump(self, node):
         # TODO
         pass
+    
+    def services(self, node, strict=False):
+        _services = []
+        for service in self.config.get('services', []):
+            try:
+                mod = __import__('kraftwerk.services.' + service, fromlist=[''])
+            except ImportError:
+                if strict:
+                    raise ValueError, 'kraftwerk does not support a %s' % service
+            _services.append(mod.Service(node, self))
+        return _services
+    
+    def is_valid(self):
+        sys.path.insert(0, self.path)
+        sys.path.insert(0, os.path.join(self.path, 'lib/python2.6/site-packages'))
+        wsgi_path = self.config.get('wsgi', '').split(":")
+        if not wsgi_path or len(wsgi_path) != 2:
+            raise ValidationError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"
+        wsgi_mod = __import__(wsgi_path[0], fromlist=[wsgi_path[0].split(".")[:-1]])
+        wsgi_app = getattr(wsgi_mod, wsgi_path[1])
+        if not callable(wsgi_app):
+            raise ValidationError, "WSGI application found but not a callable."
+        return True
 
-    def update(self, node):
-        dest_dir = os.path.join('/web', instance_name)
-        exclude_from = os.path.join(os.path.dirname(__file__), 'rsync-exclude.txt')
+    def rsync(self, dest, exclude=''):
         cmd = ['rsync',
                '--recursive',
                '--links',         # Copy over symlinks as symlinks
@@ -29,12 +54,9 @@ class Project(object):
                '--rsh=ssh',       # Use ssh
                '--delete',        # Delete files thta aren't in the source dir
                '--compress',
-               #'--skip-compress=.zip,.egg', # Skip some already-compressed files
-               '--exclude-from=%s' % exclude_from,
+               '--exclude-from=%s' % exclude,
                '--progress',
                '--quiet',
-               self.dir,
-               os.path.join('%s:%s' % (host, dest_dir)),
-               ]
+               self.src_path, dest]
         proc = subprocess.Popen(cmd)
         proc.communicate()
