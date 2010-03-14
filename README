@@ -1,9 +1,153 @@
 -*- markdown -*-
 
-The opinionated deployment tool - automation and WSGI
+A WSGI deployment tool
+
+Introduction
+------------
+
+Open source application development and system administration are the
+same thing. I'm trying to automate deployment and server work in a 
+sane way. If you manage one big project this is not interesting to 
+you. If you manage multiple websites and like Python web development
+you may be interested in saving time with a deployment automation 
+framework. 
+
+By formalizing some project conventions and the server stack, in 
+theory large chunks of the deployment process can be automated.
+The creation of nodes follows a 'push' model. This means that servers
+are commissioned from your client machine. Node interaction and 
+commissioning is done with libcloud.
+
+Design notes, terminology
+-------------------------
+
+The admin installs kraftwerk on his own computer. The admin 
+pushes projects to nodes. Server nodes do not require a kraftwerk 
+library. 
+
+Server nodes are referred to by their hostname (can be anything 
+because kraftwerk appends your /etc/hosts). 
+
+Projects are referred to by their folder name. Projects root folders 
+are virtualenvs. Project root folders contain a Python package which 
+would be your webapp.
+
+The kraftwerk cli (command line interface) is path aware. If executed 
+inside a project directory it interacts with that project.
+
+Configuration
+-------------
+
+Kraftwerk consults a ~/.kraftwerk.yaml file for configuration. This is 
+generated from a questionnaire when you first call the kraftwerk cli.
+Currently this config is mainly used to interface libcloud drivers.
+
+Secondary configuration is at the project level. Use the kraftwerk 
+`init` command to generate a project skeleton and kraftwerk supplies a
+default YAML settings file that defines certain behavior of a 
+deployed project.
+
+User templates
+--------------
+
+Most scripts and files in the project skeleton can be tailored and 
+changed by supplying a secondary template directory in the admin 
+config. This means you can tweak default parameter and add packages 
+to the system install procedure among other things. Currently there 
+is no way to change the project skeleton structure although this is a 
+possible planned feature.
+
+Project deployment
+------------------
+
+Setup and deployment of projects is run from the same non-destructive 
+command, `setup-project`. Kraftwerk detects new projects and runs 
+setup for each defined service. There is a distinction between 
+reloading and restarting services (in the name of availability).
+
+Development vs. stage vs. live
+------------------------------
+
+The goal of a stage deployment is to mirror "real-world" application 
+conditions to decrease the chances of fucking up once an application 
+is deployed to a live server. To this end kraftwerk provides the 
+plumbing for a convenient and quick stage test. Secondarily stage 
+deployments are useful for client previews and internal testing.
+
+Kraftwerk is agnostic to the development environment. Kraftwerk only 
+cares about admin settings, project settings and a Python WSGI 
+codebase. Additionally kraftwerk wants to make it easy to bundle 
+website data for easy backup and restore (refer to "Services" 
+section).
+
+Services
+--------
+
+These are databases, key-value storages, cache, queues and certain 
+I/O. Services are coupled with a `setup.sh` template script run each 
+time a new project requests it's "services".
+
+Services should expect to be interrogated for data per project (in 
+bulk). This is for purposes of data migration between nodes and 
+backup. Think: SQL dumps and loads.
+
+API
+---
+
+    # kraftwerk create-node myserver
+    > Looks like you haven't used kraftwerk before ... [some init]
+    > Waiting for node ...
+    > Edit /etc/hosts ? [y/n] y
+    > root SSH access is now ready
+    # kraftwerk init myproject
+    > myproject virtualenv is ready
+    # cd myproject
+    # source bin/activate
+    # kraftwerk setup-project --node myserver
+    > config validates
+    > site is ready!
+
+Node Setup
+----------
+
+runit, nginx, gunicorn, virtualenv
+Python stack: Crypto, PIL, DB drivers
+
+`web` user and a `/web` directory to contain project code and uploads
+
+Consult the `server_setup.sh` script for details.
+
+Static files
+------------
+
+Currently kraftwerk automatically serves the project static directory 
+with NGINX. Variable static files (user uploads) are handled by the 
+`files` service.
+
+    HTTP GET /uploads/file.jpg [/web/project/uploads/file.jpg]
+    HTTP GET /static/file.jpg  [/web/project/project/static/file.jpg]
+
+Ideally at least the `static` directory would be served with HTTP 
+cache control. Tornado manages expiry of static files quite well by 
+doing a checksum of files and appending a query parameter using 
+template helpers. This invalidates something like 99% of all caches. 
+Kraftwerk leaves this to the application to implement.
+
+Inspiration
+-----------
+
+Heroku, Silver Lining, marcdoc
+
+License
+-------
+
+No License
 
 Wishlist
 --------
+
+I wrote this to address this and scratch this itch. Kept for fun and 
+referencing my progress. 
 
 + Easy to get up and going locally with a Django project - ideally 
 one or two commands until there's an activated virtualenv and my 
@@ -32,84 +176,3 @@ based - user can define own template directory to overwrite specific
 files]
 + Easy to define complimentary processes (like worker daemons). 
 [Haven't given this much tought]
-
-Design notes, terminology
--------------------------
-
-Admin is the computer where kraftwerk is instantiated. The admin 
-commissions and interacts with nodes. The admin uploads projects to 
-nodes. Server nodes should not require a kraftwerk library. What about 
-uploads? ...
-
-Server nodes are referred to by their hostname (can be anything because 
-kraftwerk touches your /etc/hosts). 
-
-Projects are referred to by their root folder name. 
-
-Services should be able to dump and load data per project. These
-actions are initiated by the admin. 
-
-The kraftwerk cli is path aware. If executed inside a project 
-directory it can interact with that project.
-
-The init command creates an empty or almost empty WSGI Python 
-project. The user can configure a secondary project template 
-directory to overwrite templates. Currently kraftwerk only allows the
-user to overwrite files - not whole structures.
-
-Strategy
---------
-
-By formalizing some project conventions and the server stack, in 
-theory large chunks of the deployment process can be automated.
-The creation of nodes follows a 'push' model. This means that servers
-are commissioned from your client machine. Node interaction and 
-commissioning is done with libcloud. 
-
-An admin YAML config file is saved in the user's home folder. The 
-specifies libcloud access credentials.
-
-Projects also have YAML config files that specify a number of things. 
-Look at kraftwerk/kraftwerk/templates/project/kraftwerk.yaml for 
-example parameters. The user can overwrite a number of things by 
-specifying a directory of config files. Kraftwerk uses template 
-engine to generate shell scripts and project skeletons. User defined 
-templates take  precedence in template selection. In the future whole 
-project skeleton structures could be overwritten in a clean fashion.
-
-Setup project vs. Deploy project
---------------------------------
-
-Setup and deployment of projects is run from the same non-
-destructive command (setup-project). Kraftwerk detects new projects
-and runs setup for each defined service. Kraftwerk makes a 
-distinction between reloading and restarting services.
-
-API
----
-
-    # kraftwerk create-node myserver
-    > Looks like you haven't used kraftwerk before ... [some init]
-    > Waiting for node ...
-    > Edit /etc/hosts ? [y/n] y
-    > root SSH access is now ready
-    # kraftwerk init myproject
-    > myproject virtualenv is ready
-    # cd myproject
-    # source bin/activate
-    > kraftwerk setup-project --node myserver
-    > config validates
-    > site is ready!
-
-Server Setup
-------------
-
-runit, nginx, gunicorn, virtualenv
-Python stack: Crypto, PIL, DB drivers
-
-`web` user and a `/web` directory to contain project code and uploads
-
-Inspiration
------------
-
-Heroku, Silver Lining, marcdoc
