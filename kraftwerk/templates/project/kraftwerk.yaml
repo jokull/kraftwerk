@@ -1,10 +1,10 @@
 version: 0
-domain: www.{{ project.title }}.com
+domain: www.{{ project_title }}.com
 aliases:
-    - {{ project.title }}.com
+    - {{ project_title }}.com
 services:
     - postgres
     - files
 workers: 1
-wsgi: '{{ project.title }}.wsgi:application'
+wsgi: '{{ project_title }}.wsgi:application'
 packages: django

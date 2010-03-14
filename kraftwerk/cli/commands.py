@@ -3,13 +3,13 @@
 import codecs, logging, os, pprint, sys, re, time, subprocess
 from random import choice
 from functools import wraps
-
+import argparse
 import virtualenv
 from libcloud.drivers import ec2, rackspace
 # Add as you test support for more providers
 
 import kraftwerk
-from kraftwerk.project import Project
+from kraftwerk import project
 from kraftwerk.config import path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
@@ -33,6 +33,16 @@ def command(function):
     
     return wrapper
 
+class ProjectAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        proj = project.Project(os.path.abspath(values))
+        try:
+            proj.is_valid()
+        except project.ValidationError, e:
+            print "Project config did not validate: %s" % e
+            sys.exit()
+        setattr(namespace, self.dest, proj)
+
 ## Utilities
 
 @command
@@ -41,6 +51,8 @@ def show_config(config, args):
     pprint.pprint(config)
 
 def _copy_project(config, title, project_root):
+    """`init` helper to push the project skeleton through templates 
+    and copy over."""
     
     secret = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)])
     start = os.path.join(kraftwerk.templates_root, 'project')
@@ -62,7 +74,7 @@ def _copy_project(config, title, project_root):
                 else:
                     with codecs.open(dest_path, 'w', encoding='utf-8') as fp:
                         tpl = config.templates.get_template(os.path.join('project', rel))
-                        fp.write(tpl.render({'project': title, 'secret': secret}))
+                        fp.write(tpl.render({'project_title': title, 'secret': secret}))
 
 @command
 def init(config, args):
@@ -204,58 +216,51 @@ def setup_project(config, args):
     and once for each service. Kraftwerk detects a first-time 
     setup and runs service setup."""
     log = logging.getLogger('kraftwerk.setup-project')
-    # Check if first setup
-    # Loop through services setup
-    # 
-    
-    project = Project(args.project_path)
-    try:
-        project.is_valid()
-    except Exception, exc:
-        print "Project config did not validate: %s" % exc
-        return
-        
     node = getattr(args, "node", config.get("default-node"))
     if node is None:
         raise ValueError, 'Server node must be supplied as an ' \
                           'argument or in user config.'
     ssh_host = 'root@%s' % node
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no', 
-        ssh_host, 'stat /etc/nginx/sites-enabled/%s' % project.title], 
+        ssh_host, 'stat /var/service/%s' % args.project.title], 
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.communicate()
-    new = bool(proc.returncode)
+    new = bool(proc.returncode) # Could not find the runit script -> new project (TODO: better heuristic)
     
     # Sync codebase over with the web user
-    exclude = config.templates.get_template('project/rsync_exclude.txt').render()
     destination = os.path.join('%s:/web/%s/' % 
-        ("web@%s" % node, project.title))
-    stdout, stderr = project.rsync(destination)
+        ("web@%s" % node, args.project.title))
+    stdout, stderr = args.project.rsync(destination)
     if stderr:
         log.error("Sync error: %s" % stderr)
-        return
-    log.info("Synced project %s to %s" % (project.title, node))
+        sys.exit(stderr)
+    log.info("Synced project %s to %s" % (args.project.title, node))
     
+    services = args.project.services(node)
     tpl = config.templates.get_template('project_setup.sh')
-    cmd = tpl.render(dict(project=project, new=new, restart=args.restart,
-                          services=project.services(node)))
+    cmd = tpl.render(dict(project=args.project, new=new, 
+        restart=args.restart, services=services))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
-    services = project.services(node)
+    log.info("Basic project setup completed (%s to %s)" % (
+        args.project.title, node))
     if not args.no_service_setup:
         for service in services:
             proc = subprocess.Popen(['ssh', ssh_host, 
                 service.setup_script])
             proc.communicate()
 
+setup_project.parser.add_argument('project', action=ProjectAction,
+    help="Path to the project you want to set up. Defaults to current directory.")
+    
 setup_project.parser.add_argument('--node', default=None, 
     help="Server node to interact with. ")
-setup_project.parser.add_argument('--project-path', default=os.getcwd(), 
-    help="Path to the project you want to set up. Defaults to current directory.")
+    
 setup_project.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
     help="With this hook kraftwerk overwrites the basic config files but " \
          "does not attempt to set up project services.")
+         
 setup_project.parser.add_argument('--restart',
     default=False, action='store_true',
     help="Bring down and start the site WSGI service again. Default is to send" \
@@ -266,17 +271,6 @@ def destroy_project(config, args):
     """Remove project from a node with all related services and 
     files."""
     log = logging.getLogger('kraftwerk.destroy-project')
-    # Check if first setup
-    # Loop through services setup
-    # 
-    
-    project = Project(args.project_path)
-    try:
-        project.is_valid()
-    except Exception, exc:
-        print "Project config did not validate: %s" % exc
-        return
-        
     node = getattr(args, "node", config.get("default-node"))
     if node is None:
         raise ValueError, 'Server node must be supplied as an ' \
@@ -284,13 +278,18 @@ def destroy_project(config, args):
     ssh_host = 'root@%s' % node
     tpl = config.templates.get_template("project_destroy.sh")
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
-        ssh_host, tpl.render(dict(project=project))], 
+        ssh_host, tpl.render(dict(project=args.project))], 
         stdout=subprocess.PIPE)
     proc.communicate()
     log.info("Project %s removed from node %s" % \
-        (project.title, node))
+        (args.project.title, node))
+    for service in args.project.services(node):
+        proc = subprocess.Popen(['ssh', ssh_host, 
+            service.destroy_script])
+        proc.communicate()
 
+
+destroy_project.parser.add_argument('project', action=ProjectAction,
+    help="Path to the project you want to REMOVE from a server node.")
 destroy_project.parser.add_argument('--node', default=None, 
     help="Server node to interact with. ")
-destroy_project.parser.add_argument('--project-path', default=os.getcwd(), 
-    help="Path to the project you want to set up. Defaults to current directory.")

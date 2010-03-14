@@ -10,6 +10,7 @@ class Project(object):
         self.path = os.path.abspath(path)
         self.title = os.path.basename(self.path)
         self.src_path = os.path.join(self.path, self.title)
+        self._services = None
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
     
@@ -25,32 +26,40 @@ class Project(object):
         pass
     
     def services(self, node, strict=False):
-        _services = []
+        if self._services:
+            return self._services
+        self._services = []
         for service in self.config.get('services', []):
             try:
                 mod = __import__('kraftwerk.services.' + service, fromlist=[''])
             except ImportError:
                 if strict:
                     raise ValueError, 'kraftwerk does not support a %s' % service
-            _services.append(mod.Service(node, self))
-        return _services
+            self._services.append(mod.Service(node, self))
+        return self._services
     
     def is_valid(self):
+        """A best-try attempt at exposing bad config early. Try 
+        importing WSGI script, verify some types, required attributes
+        etc. """
         sys.path.insert(0, self.path)
         sys.path.insert(0, os.path.join(self.path, 'lib/python2.6/site-packages'))
         wsgi_path = self.config.get('wsgi', '').split(":")
         if not wsgi_path or len(wsgi_path) != 2:
             raise ValidationError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"
-        wsgi_mod = __import__(wsgi_path[0], fromlist=[wsgi_path[0].split(".")[:-1]])
-        wsgi_app = getattr(wsgi_mod, wsgi_path[1])
+        try:
+            wsgi_mod = __import__(wsgi_path[0], fromlist=[wsgi_path[0].split(".")[:-1]])
+            wsgi_app = getattr(wsgi_mod, wsgi_path[1])
+        except ImportError, e:
+            raise ValidationError, "WSGI application could not be imported (%s)" % e
         if not callable(wsgi_app):
             raise ValidationError, "WSGI application found but not a callable."
         if not 'workers' in self.config:
             raise ValidationError, "You must specify the number of workers for the WSGI server."
         try:
             int(self.config['workers'])
-        except TypeError:
-            raise ValidationError, "Workers value must be a number"
+        except ValueError:
+            raise ValidationError, "`workers` value must be a number"
         return True
 
     def rsync(self, dest):

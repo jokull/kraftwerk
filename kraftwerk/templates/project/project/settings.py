@@ -10,7 +10,7 @@ SITE_ROOT = abspath(join(PROJECT_ROOT, '..'))
 
 SECRET_KEY = '{{ secret }}'
 
-ROOT_URLCONF = '{{ project }}.urls'
+ROOT_URLCONF = '{{ project_title }}.urls'
 
 MEDIA_ROOT = join(SITE_ROOT, 'uploads')
 MEDIA_URL = '/uploads/'

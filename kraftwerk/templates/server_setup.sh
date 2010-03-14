@@ -8,3 +8,4 @@ cd /usr/local/src && git clone git://github.com/benoitc/gunicorn.git
 cd /usr/local/src/gunicorn && python setup.py develop
 /usr/sbin/runsvdir-start &>/dev/null & # Background and quiet
 mkdir -p /var/service
+/etc/init.d/nginx start

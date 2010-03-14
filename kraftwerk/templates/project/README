@@ -11,8 +11,8 @@ Your project must follow these conventions:
 
 In short: kraftwerk expects this structure:
 
- - /{{ project }}/{{ project }}/wsgi.py
- - /{{ project }}/service/run (chmod +x)
+ - /{{ project_title }}/{{ project_title }}/wsgi.py
+ - /{{ project_title }}/service/run (chmod +x)
 
 Normally only the PROJECT_ROOT will be rsynced over. If this is a 
 virgin deployment defined services will be copied over too. It is 
@@ -25,5 +25,5 @@ do it's best to keep flaky services running and start them again on a
 server boot. stdout will be logged for each service.
 
 kraftwerk has a special `files` service. It makes sure that a 
-directory located at /{{ project }}/files/ is writable by the web 
+directory located at /{{ project_title }}/files/ is writable by the web 
 server.

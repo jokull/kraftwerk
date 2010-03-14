@@ -4,7 +4,6 @@ SITE_SERVICE="/etc/service/$PROJECT"
 {% if new -%}
 virtualenv /web/$PROJECT
 chown web:web /web/$PROJECT
-/etc/init.d/nginx start
 {%- endif %}
 
 {% if project.config.packages %}
