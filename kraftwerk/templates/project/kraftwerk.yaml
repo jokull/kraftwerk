@@ -7,4 +7,4 @@ services:
     - files
 workers: 1
 wsgi: '{{ project.title }}.wsgi:application'
-packages: imagekit
+packages: django
