@@ -47,8 +47,10 @@ class Project(object):
             raise ValidationError, "WSGI application found but not a callable."
         if not 'workers' in self.config:
             raise ValidationError, "You must specify the number of workers for the WSGI server."
-        try: int(self.config['workers'])
-        except TypeError: raise ValidationError, "Workers value must be a number"
+        try:
+            int(self.config['workers'])
+        except TypeError:
+            raise ValidationError, "Workers value must be a number"
         return True
 
     def rsync(self, dest):

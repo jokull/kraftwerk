@@ -8,38 +8,41 @@ one or two commands until there's an activated virtualenv and my
 preferred Django project skeleton is inside TextMate. [DONE]
 + A directory of deployment configuration where I define the caching 
 schema, number of workers, staging and live URL's, perhaps super user
-accounts.
+accounts. [DONE you define workers a main domain and aliases]
 + Command line tools to load and dump data from _all_ sources 
 (PostgreSQL, redis, CouchDB, user uploaded files etc.). Some S3 
 backup points perhaps. Something like the Bundle feature in Heroku.
+[Support is planned for PostgreSQL, redis and files]
 + Easy migration strategy for scaling to multiple servers.
-+ Easy inspection of data and node health.
-+ Easy destroy/create of nodes.
++ Easy inspection of data and node health. [PLANNED]
++ Easy destroy/create of nodes. [DONE]
 + Easy running one-off commands in the right environment on a remote 
 server (think Django syncdb). Or easy dropping into a remote bash 
 shell with everything set up for a project.
 + Easy local testing - both quick for code-alt+tab-refresh action and 
-a full stack VirtualBox/VMWare deployment.
+a full stack VirtualBox/VMWare deployment. [When libcloud gets a 
+VirtualBox driver this will be easy]
 + Easy CDN management at the application level - Environments should 
-be aware of how to serve static media.
+be aware of how to serve static media. [This might be hard]
 + Easy to venture off the beaten path - this is the enemy of 
-automation!
-+ Easy to define complimentary processes (like worker daemons).
+automation! [Server scripts and project init skeleton is template 
+based - user can define own template directory to overwrite specific
+files]
++ Easy to define complimentary processes (like worker daemons). 
+[Haven't given this much tought]
 
 Design notes
 ------------
 
-Admin is the computer where kraftwerk is called. The admin 
+Admin is the computer where kraftwerk is instantiated. The admin 
 commissions and interacts with nodes. The admin uploads projects to 
-nodes.
+nodes. Server nodes should not require a kraftwerk library. What about 
+uploads? ...
 
 Server nodes are referred to by their hostname (can be anything because 
 kraftwerk touches your /etc/hosts). 
 
 Projects are referred to by their root folder name. 
-
-Server nodes should not require a kraftwerk library. What about 
-uploads? ...
 
 Services should be able to dump and load data per project. These
 actions are initiated by the admin.
@@ -77,7 +80,8 @@ Setup project vs. Deploy project
 
 Setup and deployment of projects is run from the same non-
 destructive command (setup-project). Kraftwerk detects new projects
-and runs setup for each defined service.
+and runs setup for each defined service. Kraftwerk makes a 
+distinction between reloading and restarting services.
 
 Ideal API
 ---------
@@ -91,16 +95,19 @@ Ideal API
 > myproject virtualenv is ready
 # cd myproject
 # source bin/activate
+> kraftwerk setup-project --node myserver
+> config validates
+> site is ready!
 
 Server Setup
 ------------
 
 runit, nginx, gunicorn, virtualenv
-Python stack: Crypto, PIL
+Python stack: Crypto, PIL, DB drivers
 
 `web` user and a `/web` directory to contain project code and uploads
 
 Inspiration
 -----------
 
-Heroku, Silver Lining
+Heroku, Silver Lining, marcdoc
