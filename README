@@ -31,8 +31,8 @@ files]
 + Easy to define complimentary processes (like worker daemons). 
 [Haven't given this much tought]
 
-Design notes
-------------
+Design notes, terminology
+-------------------------
 
 Admin is the computer where kraftwerk is instantiated. The admin 
 commissions and interacts with nodes. The admin uploads projects to 
@@ -45,7 +45,7 @@ kraftwerk touches your /etc/hosts).
 Projects are referred to by their root folder name. 
 
 Services should be able to dump and load data per project. These
-actions are initiated by the admin.
+actions are initiated by the admin. 
 
 The kraftwerk cli is path aware. If executed inside a project 
 directory it can interact with that project.
@@ -65,15 +65,15 @@ are commissioned from your client machine. Node interaction and
 commissioning is done with libcloud. 
 
 An admin YAML config file is saved in the user's home folder. The 
-user can specify libcloud access credentials.
+specifies libcloud access credentials.
 
-Projects have YAML config files that specify a number of things. Look
-at kraftwerk/kraftwerk/templates/project/kraftwerk.yaml for example
-parameters. The user can overwrite a number of things by specifying a 
-directory of config files. Kraftwerk uses template engine to generate
-shell scripts and project skeletons. User defined templates take 
-precedence in template selection. In the future whole project 
-skeleton structures could be overwritten in a clean fashion.
+Projects also have YAML config files that specify a number of things. 
+Look at kraftwerk/kraftwerk/templates/project/kraftwerk.yaml for 
+example parameters. The user can overwrite a number of things by 
+specifying a directory of config files. Kraftwerk uses template 
+engine to generate shell scripts and project skeletons. User defined 
+templates take  precedence in template selection. In the future whole 
+project skeleton structures could be overwritten in a clean fashion.
 
 Setup project vs. Deploy project
 --------------------------------
