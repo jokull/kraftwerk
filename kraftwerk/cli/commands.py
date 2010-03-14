@@ -239,7 +239,8 @@ def setup_project(config, args):
     services = args.project.services(node)
     tpl = config.templates.get_template('project_setup.sh')
     cmd = tpl.render(dict(project=args.project, new=new, 
-        restart=args.restart, services=services))
+        restart=args.restart, services=services, 
+        upgrade_packages=args.upgrade_packages))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
     log.info("Basic project setup completed (%s to %s)" % (
@@ -260,7 +261,11 @@ setup_project.parser.add_argument('--no-service-setup',
     default=False, action='store_true',
     help="With this hook kraftwerk overwrites the basic config files but " \
          "does not attempt to set up project services.")
-         
+
+setup_project.parser.add_argument('--upgrade-packages',
+    default=False, action='store_true',
+    help="Overwrite current versions of Python packages")
+
 setup_project.parser.add_argument('--restart',
     default=False, action='store_true',
     help="Bring down and start the site WSGI service again. Default is to send" \

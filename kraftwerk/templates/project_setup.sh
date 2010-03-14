@@ -7,7 +7,7 @@ chown web:web /web/$PROJECT
 {%- endif %}
 
 {% if project.config.packages %}
-/web/$PROJECT/bin/pip install {{ project.config.packages }}
+/web/$PROJECT/bin/pip {% if upgrade_packages %}-U {% endif %}install {{ project.config.packages }}
 {% endif %}
 
 cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"
