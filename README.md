@@ -83,21 +83,21 @@ destructive command (setup-project). Kraftwerk detects new projects
 and runs setup for each defined service. Kraftwerk makes a 
 distinction between reloading and restarting services.
 
-Ideal API
----------
+API
+---
 
-# kraftwerk create-node myserver
-> Looks like you haven't used kraftwerk before ... [some init]
-> Waiting for node ...
-> Edit /etc/hosts ? [y/n] y
-> root SSH access is now ready
-# kraftwerk init myproject
-> myproject virtualenv is ready
-# cd myproject
-# source bin/activate
-> kraftwerk setup-project --node myserver
-> config validates
-> site is ready!
+    # kraftwerk create-node myserver
+    > Looks like you haven't used kraftwerk before ... [some init]
+    > Waiting for node ...
+    > Edit /etc/hosts ? [y/n] y
+    > root SSH access is now ready
+    # kraftwerk init myproject
+    > myproject virtualenv is ready
+    # cd myproject
+    # source bin/activate
+    > kraftwerk setup-project --node myserver
+    > config validates
+    > site is ready!
 
 Server Setup
 ------------
