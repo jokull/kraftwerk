@@ -1,5 +1,7 @@
 version: 0
+domain: www.levis.com
+aliases:
+    - levis.com
 services:
     - postgresql
-    - redis
-    - uploads
+    - files

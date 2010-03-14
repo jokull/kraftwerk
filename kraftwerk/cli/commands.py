@@ -215,15 +215,16 @@ def setup_project(config, args):
     # Setup services
     node = getattr(args, "node", config.get("default-node"))
     if node is None:
-        raise ValueError, 'Server node must be supplied as an argument or in conf'
+        raise ValueError, 'Server node must be supplied as an ' \
+                          'argument or in user config'
     
     project = Project(args.project_path)
     ssh_host = 'root@%s' % node
     tpl = config.templates.get_template('project_setup.sh')
-    print tpl.render(dict(project=project))
+    tpl.render(dict(project=project))
     proc = subprocess.Popen(['ssh', ssh_host, 
         tpl.render(dict(project=project))])
-    print proc.communicate()
+    proc.communicate()
     for service in project.config["services"]:
         try:
             mod = __import__('kraftwerk.services.' + service, fromlist=[''])
@@ -234,7 +235,7 @@ def setup_project(config, args):
         print proc.communicate()
 
 setup_project.parser.add_argument('--node', default=None, 
-    help="Path to the project you want to set up")
+    help="Server node to interact with. ")
 setup_project.parser.add_argument('--project-path', default=os.getcwd(), 
     help="Path to the project you want to set up. Defaults to current directory.")
 
