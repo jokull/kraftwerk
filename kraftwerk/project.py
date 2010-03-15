@@ -1,8 +1,7 @@
 import os, subprocess, sys
 import yaml
 
-class ValidationError(Exception):
-    pass
+from kraftwerk.exc import ConfigError
 
 class Project(object):
     
@@ -46,20 +45,20 @@ class Project(object):
         sys.path.insert(0, os.path.join(self.path, 'lib/python2.6/site-packages'))
         wsgi_path = self.config.get('wsgi', '').split(":")
         if not wsgi_path or len(wsgi_path) != 2:
-            raise ValidationError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"
+            raise ConfigError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"
         try:
             wsgi_mod = __import__(wsgi_path[0], fromlist=[wsgi_path[0].split(".")[:-1]])
             wsgi_app = getattr(wsgi_mod, wsgi_path[1])
         except ImportError, e:
-            raise ValidationError, "WSGI application could not be imported (%s)" % e
+            raise ConfigError, "WSGI application could not be imported (%s)" % e
         if not callable(wsgi_app):
-            raise ValidationError, "WSGI application found but not a callable."
+            raise ConfigError, "WSGI application found but not a callable."
         if not 'workers' in self.config:
-            raise ValidationError, "You must specify the number of workers for the WSGI server."
+            raise ConfigError, "You must specify the number of workers for the WSGI server."
         try:
             int(self.config['workers'])
         except ValueError:
-            raise ValidationError, "`workers` value must be a number"
+            raise ConfigError, "`workers` value must be a number"
         return True
 
     def rsync(self, dest):

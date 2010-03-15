@@ -4,7 +4,10 @@ import os
 import jinja2
 
 from libcloud.types import Provider
+from libcloud.base import ConnectionUserAndKey, ConnectionKey
 from libcloud.providers import get_driver as libcloud_get_driver
+
+from kraftwerk.exc import ConfigError
 
 path = os.path.join(os.path.expanduser('~'), '.kraftwerk.yaml')
 
@@ -89,11 +92,18 @@ class Config(dict):
     def _driver(self):
         provider = self['provider']
         DriverClass = libcloud_get_driver(getattr(Provider, provider.upper()))
-        return DriverClass(self['user'], self['secret'])
+        credentials = [self['user']]
+        if issubclass(DriverClass.connectionCls, ConnectionUserAndKey):
+            credentials.append(self['secret'])
+        try:
+            driver = DriverClass(*credentials)
+        except TypeError, e:
+            raise ConfigError, 'API Access credentials for %s provider ' \
+                               'are missing or wrong' % self['provider']
+        return driver
     
     @property
     def _templates(self):
-        # Could use jinja2.ChoiceLoader to allow user to overwrite templates
         loaders = [jinja2.FileSystemLoader(templates_root)]
         if "templates" in self:
             loaders.insert(0, jinja2.FileSystemLoader(self["templates"]))
