@@ -29,6 +29,7 @@ setup(
     description      = "A WSGI deployment tool.",
     zip_safe         = False,
     packages         = find_packages(),
+    install_requires = 'apache-libcloud',
     package_data     = {'kraftwerk': find_package_data()},
     include_package_data = True,
     entry_points     = {'console_scripts': ['kraftwerk = kraftwerk.cli.main:main']},
