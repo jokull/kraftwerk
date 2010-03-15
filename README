@@ -133,6 +133,19 @@ doing a checksum of files and appending a query parameter using
 template helpers. This invalidates something like 99% of all caches. 
 Kraftwerk leaves this to the application to implement.
 
+Installation
+------------
+
+virtualenv way:
+
+    virtualenv kraftwerk
+    source kraftwerk/bin/activate
+    pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
+    kraftwerk init ~/Code/newproject
+
+You may have to install libcloud manually with `python setup.py 
+install` (refer to `REQUIREMENTS` file for git location). 
+
 Inspiration
 -----------
 
