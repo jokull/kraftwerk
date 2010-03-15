@@ -1,3 +1,4 @@
 argparse
 PyYAML
 Jinja2
+-e git+git://github.com/apache/libcloud.git#egg=libcloud

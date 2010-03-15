@@ -19,7 +19,8 @@ def find_package_data():
     return files
 
 with open(abspath(join(dirname(__file__), 'REQUIREMENTS')), 'r') as fp:
-    requirements = [l.strip() for l in fp]
+    # Filter pip-y packages - libcloud has to be installed from git
+    requirements = [l.strip() for l in fp if re.match(r'^[\w_-]+$', l.strip())]
 
 setup(
     name             = 'kraftwerk',
@@ -29,7 +30,6 @@ setup(
     description      = "A WSGI deployment tool.",
     zip_safe         = False,
     packages         = find_packages(),
-    install_requires = 'apache-libcloud',
     package_data     = {'kraftwerk': find_package_data()},
     include_package_data = True,
     entry_points     = {'console_scripts': ['kraftwerk = kraftwerk.cli.main:main']},
