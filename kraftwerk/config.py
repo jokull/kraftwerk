@@ -7,11 +7,10 @@ from libcloud.types import Provider
 from libcloud.base import ConnectionUserAndKey, ConnectionKey
 from libcloud.providers import get_driver as libcloud_get_driver
 
+from kraftwerk import templates_root
 from kraftwerk.exc import ConfigError
 
 path = os.path.join(os.path.expanduser('~'), '.kraftwerk.yaml')
-
-from . import templates_root
 
 class ConfigNotFound(Exception):
     """The configuration file was not found."""
