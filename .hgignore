@@ -2,3 +2,4 @@ syntax: glob
 *.pyc
 ._*
 .DS_Store
+kraftwerk.egg-info

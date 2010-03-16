@@ -78,7 +78,7 @@ def _copy_project(config, title, project_root):
 
 @command
 def init(config, args):
-    """Initialize a new kraftwerk repository."""
+    """Create a new WSGI project skeleton and config."""
     
     log = logging.getLogger('kraftwerk.init')
     
@@ -108,7 +108,7 @@ def init(config, args):
     os.makedirs(src_root)
     
     _copy_project(config, args.title, project_root)
-    log.info('Your new project is at: %s' % project_root)
+    print "Your new project is at: %s" % project_root
 
 init.parser.add_argument('title', default=None,
     help="Create kraftwerk project (if omitted, defaults to current directory)")
@@ -125,7 +125,7 @@ def create_node(config, args):
         pubkey_paths.append(config["pubkey"])
     for path in pubkey_paths:
         if os.path.exists(path):
-            log.info('SSH public key: %s' % path)
+            print 'SSH public key: %s' % path
             with open(path) as fp:
                 pubkey = fp.read().strip()
             break
@@ -144,18 +144,22 @@ def create_node(config, args):
         if i.id == image_id:
             image = i
             break
+    else:
+        sys.exit("Image %s not found for this provider. Aborting." % image_id)
             
     size_id = getattr(args, 'size-id', config["size_id"])
     for s in config.driver.list_sizes():
         if s.id == size_id:
             size = s
             break
+    else:
+        sys.exit("Size %s not found for this provider. Aborting." % size_id)
     
     if isinstance(config.driver, ec2.EC2NodeDriver):
         extra = dict(userdata="""#!/bin/bash
 echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
-        if not 'keyname' in config:
-            raise ValueError, 'ERROR: EC2 "keyname" not found in your config'
+        if not "keyname" in config:
+            config["keyname"] = raw_input("EC2 Key Pair [default=\"default\"]: ") or "default"
         extra.update(keyname=config["keyname"])
         log.debug("ubuntu user will be active and accessible with \
             your %s key" % config["keyname"])
@@ -167,7 +171,10 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
     create_info = dict(name=args.hostname,
         image=image, size=size, **extra)
     log.debug("Creating node: %s" % pprint.pprint(create_info))
-    node = config.driver.create_node(**create_info)
+    try:
+        node = config.driver.create_node(**create_info)
+    except Exception, e:
+        raise Exception, "libcloud error: %s" % e
     public_ip = node.public_ip[0]
     
     # Poll the node until it has a public ip
@@ -182,7 +189,7 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         from socket import gethostbyname
         public_ip = gethostbyname(public_ip)
     
-    log.info("Server ready at %s" % public_ip)
+    print "Server ready at %s" % public_ip
 
     if confirm("Create /etc/hosts entry?"):
         from kraftwerk.etchosts import set_etchosts
@@ -211,10 +218,8 @@ setup_node.parser.add_argument('node', default=None,
 
 @command
 def setup_project(config, args):
-    """Create a project container on a node. Setup all services 
-    required. An SSH process is called out once for basic config
-    and once for each service. Kraftwerk detects a first-time 
-    setup and runs service setup."""
+    """Sync and/or setup a WSGI project. Kraftwerk detects a first-
+    time setup and runs service setup."""
     log = logging.getLogger('kraftwerk.setup-project')
     node = getattr(args, "node", config.get("default-node"))
     if node is None:
@@ -234,7 +239,7 @@ def setup_project(config, args):
     if stderr:
         log.error("Sync error: %s" % stderr)
         sys.exit(stderr)
-    log.info("Synced project %s to %s" % (args.project.title, node))
+    print "Synced project %s to %s" % (args.project.title, node)
     
     services = args.project.services(node)
     tpl = config.templates.get_template('project_setup.sh')
@@ -243,8 +248,8 @@ def setup_project(config, args):
         upgrade_packages=args.upgrade_packages))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
-    log.info("Basic project setup completed (%s to %s)" % (
-        args.project.title, node))
+    print "Basic project setup completed (%s to %s)" % (
+        args.project.title, node)
     if not args.no_service_setup:
         for service in services:
             proc = subprocess.Popen(['ssh', ssh_host, 
@@ -286,8 +291,8 @@ def destroy_project(config, args):
         ssh_host, tpl.render(dict(project=args.project))], 
         stdout=subprocess.PIPE)
     proc.communicate()
-    log.info("Project %s removed from node %s" % \
-        (args.project.title, node))
+    print "Project %s removed from node %s" % \
+        (args.project.title, node)
     for service in args.project.services(node):
         proc = subprocess.Popen(['ssh', ssh_host, 
             service.destroy_script])
