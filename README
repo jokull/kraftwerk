@@ -1,16 +1,11 @@
 -*- markdown -*-
 
-A WSGI deployment tool
+A WSGI deployment tool - stop being a sysadmin
 
 Introduction
 ------------
 
-Open source application development and system administration are the
-same thing. I'm trying to automate deployment and server work in a 
-sane way. If you manage one big project this is not interesting to 
-you. If you manage multiple websites and like Python web development
-you may be interested in saving time with a deployment automation 
-framework. 
+I'm trying to automate deployment and server admin in a sane way. 
 
 By formalizing some project conventions and the server stack, in 
 theory large chunks of the deployment process can be automated.
@@ -132,6 +127,12 @@ cache control. Tornado manages expiry of static files quite well by
 doing a checksum of files and appending a query parameter using 
 template helpers. This invalidates something like 99% of all caches. 
 Kraftwerk leaves this to the application to implement.
+
+Todo
+----
+
++ Service dump and load
++ Logging (possibly with a nice api)
 
 Installation
 ------------

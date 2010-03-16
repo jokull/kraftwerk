@@ -4,6 +4,7 @@ import logging
 import os, shutil
 import argparse
 
+from kraftwerk import templates
 from kraftwerk.cli import commands
 from kraftwerk.cli.parser import parser
 from kraftwerk.config import Config, ConfigNotFound
@@ -14,7 +15,7 @@ def create_config(path):
     secret   = raw_input('Your provider secret: ')
     image_id = raw_input('Your default Ubuntu image: ')
     size_id  = raw_input('Your default node size: ')
-    tpl = config.templates.get_template('.kraftwerk.yaml')
+    tpl = templates.get_template('.kraftwerk.yaml')
     with open(path, 'w') as fp:
         fp.write(tpl.render({'user': user, 'secret': secret,
             'image_id': image_id, 'size_id': size_id, 'provider': provider }))
