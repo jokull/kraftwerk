@@ -266,7 +266,6 @@ setup_project.parser.add_argument('project', action=ProjectAction,
     help="Path to the project you want to set up. Defaults to current directory.")
     
 setup_project.parser.add_argument('--node', required=False, 
-    dest="HOSTNAME", 
     help="Server node to interact with.")
     
 setup_project.parser.add_argument('--no-service-setup', 
@@ -319,5 +318,4 @@ destroy_project.parser.add_argument('project', action=ProjectAction,
     nargs='?',
     help="Path to the project you want to REMOVE from a server node.")
 destroy_project.parser.add_argument('--node', required=False, 
-    dest="HOSTNAME", 
     help="Server node to interact with.")

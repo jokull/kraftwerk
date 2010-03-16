@@ -89,12 +89,19 @@ backup. Think: SQL dumps and loads.
 Quick Start
 -----------
 
+Kraftwerk uses libcloud under the hood to commission servers. Cloud 
+providers have different APIs which libcloud attempts to abstract as 
+much as possible. Some have secret API keys, and some have user/pass 
+auth challenges. Kraftwerk thinly veils these differences and simply 
+passes user or user/secret credentials to the libcloud provider 
+driver.
+
     $ virtualenv kraftwerk # Assuming virtualenv that includes pip
     $ cd kraftwerk
     $ source bin/activate
     $ pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
     $ kraftwerk create-node liebe
-    > [answer some questions]
+    > [answer some questions, creates ~/.kraftwerk.yaml]
     $ kraftwerk init calculator
     $ cd calculator
     $ kraftwerk setup-project --node liebe # From within project root
@@ -102,6 +109,31 @@ Quick Start
 If kraftwerk complains about libcloud missing install it like this:
 
     pip install -e git+git://github.com/cloudkick/libcloud.git#egg=libcloud
+
+YAML Configuration
+------------------
+
+~/.kraftwerk.yaml
+
++ provider (So far EC2 is tested)
++ user (EC2=Access-Key-ID; Rackspace=Username)
++ secret (EC2=Secret-Access-Key)
++ image_id (EC2=AMI-ID)
++ size_id = (EC2=m1.small)
++ securitygroup (EC2 not required)
++ keyname (EC2 not required)
++ default_node - Don't need to specify --node in CLI
++ templates - Path to templates directory for overwriting
+
+PROJECT/kraftwerk.yaml
+
++ version - Currently not used
++ domain - Hostname of the main virtualhost
++ aliases - A list of any additional hostnames (HTTP redirect to main)
++ services - List of services the server node will supply to the site
++ workers - gunicorn workers
++ wsgi - module.module:callable to WSGI app
++ packages - space seperated list of packages to pip install
 
 Server Stack
 ------------
@@ -152,7 +184,8 @@ install` (refer to `REQUIREMENTS` file for git location).
 Inspiration
 -----------
 
-Heroku, Silver Lining, marcdoc
++ Heroku
++ Silver Lining, markdoc - big chunks of code were taken from these projects
 
 License
 -------
