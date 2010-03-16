@@ -1,5 +1,5 @@
 provider:   {{ provider }}
 user:       {{ user }}
 secret:     {{ secret }}
-image_id:   {{ image_name }} # ex: ami-2fc2e95b
+image_id:   {{ image_id }} # ex: ami-2fc2e95b
 size_id:    {{ size_id }} # ex: m1.small
