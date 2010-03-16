@@ -86,24 +86,25 @@ Services should expect to be interrogated for data per project (in
 bulk). This is for purposes of data migration between nodes and 
 backup. Think: SQL dumps and loads.
 
-API
----
+Quick Start
+-----------
 
-    # kraftwerk create-node myserver
-    > Looks like you haven't used kraftwerk before ... [some init]
-    > Waiting for node ...
-    > Edit /etc/hosts ? [y/n] y
-    > root SSH access is now ready
-    # kraftwerk init myproject
-    > myproject virtualenv is ready
-    # cd myproject
-    # source bin/activate
-    # kraftwerk setup-project --node myserver
-    > config validates
-    > site is ready!
+    $ virtualenv kraftwerk # Assuming virtualenv that includes pip
+    $ cd kraftwerk
+    $ source bin/activate
+    $ pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
+    $ kraftwerk create-node liebe
+    > [answer some questions]
+    $ kraftwerk init calculator
+    $ cd calculator
+    $ kraftwerk setup-project --node liebe # From within project root
 
-Node Setup
-----------
+If kraftwerk complains about libcloud missing install it like this:
+
+    pip install -e git+git://github.com/cloudkick/libcloud.git#egg=libcloud
+
+Server Stack
+------------
 
 runit, nginx, gunicorn, virtualenv
 Python stack: Crypto, PIL, DB drivers
@@ -133,6 +134,7 @@ Todo
 
 + Service dump and load
 + Logging (possibly with a nice api)
++ libcloud requirement
 
 Installation
 ------------
