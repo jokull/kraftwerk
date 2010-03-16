@@ -161,8 +161,6 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         if not "keyname" in config:
             config["keyname"] = raw_input("EC2 Key Pair [default=\"default\"]: ") or "default"
         extra.update(keyname=config["keyname"])
-        log.debug("ubuntu user will be active and accessible with \
-            your %s key" % config["keyname"])
         if 'securitygroup' in config:
             extra.update(securitygroup=config["securitygroup"])
     elif isinstance(config.driver, rackspace.RackspaceNodeDriver):
@@ -188,12 +186,13 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
     if not IP_RE.match(public_ip):
         from socket import gethostbyname
         public_ip = gethostbyname(public_ip)
-    
-    print "Server ready at %s" % public_ip
 
     if confirm("Create /etc/hosts entry?"):
         from kraftwerk.etchosts import set_etchosts
         set_etchosts(args.hostname, public_ip)
+    
+    print "Server ready at %s (%s)" % (args.hostname, public_ip)
+    print "Run 'kraftwerk setup-node %s'" % args.hostname
     
 create_node.parser.add_argument('hostname', default=None,
     help="Hostname label for the node (optionally adds an entry to /etc/hosts for easy access)")
