@@ -3,6 +3,33 @@ import yaml
 
 from kraftwerk.exc import ConfigError
 
+def cached_list(f):
+    """Decorator that caches yielding methods and stores them as 
+    lists.
+    
+    >>> class A:
+    ...    @cached_list
+    ...    def ten(self):
+    ...        for i in range(10): yield i
+    >>> a = A()
+    >>> a.ten()
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> a.ten()
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    
+    """
+    def func(self, *args, **kwargs):
+        key = "%s%s" % (f.__name__, args)
+        try:
+            return self._property_cache[key]
+        except AttributeError:
+            self._property_cache = {}
+        except KeyError:
+            pass
+        output = self._property_cache[key] = list(f(self, *args, **kwargs))
+        return output
+    return func
+
 class Project(object):
     
     def __init__(self, path):
@@ -24,18 +51,21 @@ class Project(object):
         # TODO
         pass
     
+    @cached_list
     def services(self, node, strict=False):
-        if self._services:
-            return self._services
-        self._services = []
         for service in self.config.get('services', []):
             try:
                 mod = __import__('kraftwerk.services.' + service, fromlist=[''])
             except ImportError:
                 if strict:
                     raise ValueError, 'kraftwerk does not support a %s' % service
-            self._services.append(mod.Service(node, self))
-        return self._services
+            yield mod.Service(node, self)
+    
+    @cached_list
+    def environment(self, node):
+        for service in self.services(node):
+            for key, value in service.env().items():
+                yield key, value
     
     def is_valid(self):
         """A best-try attempt at exposing bad config early. Try 

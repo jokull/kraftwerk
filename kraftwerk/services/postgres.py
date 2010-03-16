@@ -11,7 +11,7 @@ class Service(BaseService):
     
     def env(self):
         return dict(
-            USER=self.project.title,
-            PASSWORD=self.project.title,
-            DATABASE=self.project.title)
+            POSTGRES_USER=self.project.title,
+            POSTGRES_PASSWORD=self.project.title,
+            POSTGRES_DATABASE=self.project.title)
         

@@ -10,6 +10,7 @@ from libcloud.drivers import ec2, rackspace
 
 import kraftwerk
 from kraftwerk import project
+from kraftwerk.exc import ConfigError
 from kraftwerk.config import path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
@@ -38,7 +39,7 @@ class ProjectAction(argparse.Action):
         proj = project.Project(os.path.abspath(values))
         try:
             proj.is_valid()
-        except project.ValidationError, e:
+        except ConfigError, e:
             print "Project config did not validate: %s" % e
             sys.exit()
         setattr(namespace, self.dest, proj)
@@ -240,10 +241,10 @@ def setup_project(config, args):
         sys.exit(stderr)
     print "Synced project %s to %s" % (args.project.title, node)
     
-    services = args.project.services(node)
+    environment = args.project.environment(node)
     tpl = config.templates.get_template('project_setup.sh')
     cmd = tpl.render(dict(project=args.project, new=new, 
-        restart=args.restart, services=services, 
+        restart=args.restart, environment=environment, 
         upgrade_packages=args.upgrade_packages))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
