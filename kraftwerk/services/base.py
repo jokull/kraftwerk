@@ -3,9 +3,9 @@ import kraftwerk
 
 class BaseService(object):
     
-    def __init__(self, node, project):
-        self.node = node
+    def __init__(self, project, node):
         self.project = project
+        self.node = node
     
     @property
     def name(self):

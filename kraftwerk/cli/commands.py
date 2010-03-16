@@ -36,7 +36,13 @@ def command(function):
 
 class ProjectAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        proj = project.Project(os.path.abspath(values))
+        if values is None:
+            values = os.getcwd()
+        try:
+            proj = project.Project(os.path.abspath(values))
+        except IOError:
+            sys.exit("kraftwerk.yaml is missing or project path is " \
+                     "not a kraftwerk project directory. \n")
         try:
             proj.is_valid()
         except ConfigError, e:
@@ -221,10 +227,9 @@ def setup_project(config, args):
     """Sync and/or setup a WSGI project. Kraftwerk detects a first-
     time setup and runs service setup."""
     log = logging.getLogger('kraftwerk.setup-project')
-    node = getattr(args, "node", config.get("default-node"))
+    node = getattr(args, "node", config.get("default_node"))
     if node is None:
-        raise ValueError, 'Server node must be supplied as an ' \
-                          'argument or in user config.'
+        sys.exit("Node argument required.")
     ssh_host = 'root@%s' % node
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no', 
         ssh_host, 'stat /var/service/%s' % args.project.title], 
@@ -241,7 +246,7 @@ def setup_project(config, args):
         sys.exit(stderr)
     print "Synced project %s to %s" % (args.project.title, node)
     
-    environment = args.project.environment(node)
+    environment = args.project.environment()
     tpl = config.templates.get_template('project_setup.sh')
     cmd = tpl.render(dict(project=args.project, new=new, 
         restart=args.restart, environment=environment, 
@@ -251,16 +256,18 @@ def setup_project(config, args):
     print "Basic project setup completed (%s to %s)" % (
         args.project.title, node)
     if not args.no_service_setup:
-        for service in services:
+        for service in args.project.services(node):
             proc = subprocess.Popen(['ssh', ssh_host, 
                 service.setup_script])
             proc.communicate()
 
 setup_project.parser.add_argument('project', action=ProjectAction,
+    nargs='?', 
     help="Path to the project you want to set up. Defaults to current directory.")
     
-setup_project.parser.add_argument('--node', default=None, 
-    help="Server node to interact with. ")
+setup_project.parser.add_argument('--node', required=False, 
+    dest="HOSTNAME", 
+    help="Server node to interact with.")
     
 setup_project.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
@@ -269,7 +276,7 @@ setup_project.parser.add_argument('--no-service-setup',
 
 setup_project.parser.add_argument('--upgrade-packages',
     default=False, action='store_true',
-    help="Overwrite current versions of Python packages")
+    help="Upgrade Python packages (adds -U to pip install)")
 
 setup_project.parser.add_argument('--restart',
     default=False, action='store_true',
@@ -277,14 +284,23 @@ setup_project.parser.add_argument('--restart',
          "a HUP signal to the process to reload it. ")
 
 @command
+def env(config, args):
+    """List all project service environment variables, for 
+    convenience."""
+    for key, value in args.project.environment():
+        print "%s: \"%s\"" % (key, value)
+
+env.parser.add_argument('project', action=ProjectAction, nargs='?',
+    help="Path to the project you want to set up. Defaults to current directory.")
+
+@command
 def destroy_project(config, args):
     """Remove project from a node with all related services and 
     files."""
     log = logging.getLogger('kraftwerk.destroy-project')
-    node = getattr(args, "node", config.get("default-node"))
+    node = getattr(args, "node", config.get("default_node"))
     if node is None:
-        raise ValueError, 'Server node must be supplied as an ' \
-                          'argument or in user config.'
+        sys.exit("Node argument required.")
     ssh_host = 'root@%s' % node
     tpl = config.templates.get_template("project_destroy.sh")
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
@@ -299,7 +315,9 @@ def destroy_project(config, args):
         proc.communicate()
 
 
-destroy_project.parser.add_argument('project', action=ProjectAction,
+destroy_project.parser.add_argument('project', action=ProjectAction, 
+    nargs='?',
     help="Path to the project you want to REMOVE from a server node.")
-destroy_project.parser.add_argument('--node', default=None, 
-    help="Server node to interact with. ")
+destroy_project.parser.add_argument('--node', required=False, 
+    dest="HOSTNAME", 
+    help="Server node to interact with.")

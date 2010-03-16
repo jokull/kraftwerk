@@ -52,18 +52,18 @@ class Project(object):
         pass
     
     @cached_list
-    def services(self, node, strict=False):
+    def services(self, node=None, strict=False):
         for service in self.config.get('services', []):
             try:
                 mod = __import__('kraftwerk.services.' + service, fromlist=[''])
             except ImportError:
                 if strict:
                     raise ValueError, 'kraftwerk does not support a %s' % service
-            yield mod.Service(node, self)
+            yield mod.Service(self, node)
     
     @cached_list
-    def environment(self, node):
-        for service in self.services(node):
+    def environment(self):
+        for service in self.services():
             for key, value in service.env().items():
                 yield key, value
     
