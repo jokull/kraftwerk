@@ -1,3 +1,6 @@
+"""This script is adapted from Ian Bicking's Silver Lining project
+which is under GPLv2 licensing."""
+
 """Handle /etc/hosts
 
 This has methods to put a new host->ip setting in /etc/hosts, as well

@@ -92,6 +92,7 @@ class Project(object):
         return True
 
     def rsync(self, dest):
+        exclude = os.path.join(self.path, "rsync_exclude.txt")
         cmd = ['rsync',
                '--recursive',
                '--links',         # Copy over symlinks as symlinks
@@ -101,9 +102,10 @@ class Project(object):
                '--rsh=ssh',       # Use ssh
                '--delete',        # Delete files thta aren't in the source dir
                '--compress',
-               '--exclude-from=%s' % os.path.join(self.path, "rsync_exclude.txt"),
                '--progress',
                '--quiet',
                self.src_path, dest]
+        if os.path.isfile(exclude):
+            cmd.insert(2, '--exclude-from=%s' % exlude)
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
         return proc.communicate()

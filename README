@@ -44,8 +44,8 @@ Currently this config is mainly used to interface libcloud drivers.
 + secret (EC2=Secret-Access-Key)
 + image_id (EC2=AMI-ID)
 + size_id = (EC2=m1.small)
-+ securitygroup (EC2 not required)
-+ keyname (EC2 not required)
++ securitygroup (EC2, uses `default` if not specified)
++ keyname (EC2, required although not used for root access)
 + default_node - Don't need to specify --node in CLI
 + templates - Path to templates directory for overwriting
 
@@ -186,17 +186,16 @@ Testing locally
 ---------------
 
 I'm using VirtualBox to test projects locally. I manually create a 
-minimal Ubuntu, overwrite /root/.ssh/authorized_keys, edit my 
+minimal Ubuntu instance, overwrite /root/.ssh/authorized_keys, edit my 
 /etc/hosts and run the kraftwerk setup-node against it. Even better 
 would be some VServer/XEN drivers for libcloud which would in theory 
 enable you to use the create-node command locally too.
 
-Todo
+TODO
 ----
 
 + Service dump and load
 + Logging (possibly with a nice api)
-+ libcloud requirement
 
 Inspiration
 -----------
@@ -204,10 +203,12 @@ Inspiration
 + Heroku
 + Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks of code were taken from these projects
 
-License
--------
+License and such
+----------------
 
-No License
+No License. No guarantees. Kraftwerk is not suitable for 
+non-disposable servers. Don't run it against a box that isn't 
+specifically for kraftwerk hosting.
 
 Wishlist
 --------

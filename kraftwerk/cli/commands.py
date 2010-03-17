@@ -234,8 +234,8 @@ def setup_project(config, args):
     proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no', 
         ssh_host, 'stat /var/service/%s' % args.project.title], 
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc.communicate()
-    new = bool(proc.returncode) # Could not find the runit script -> new project (TODO: better heuristic)
+    stdout, stderr = proc.communicate()
+    new = bool(stderr) # Could not find the runit script -> new project (TODO: better heuristic)
     
     # Sync codebase over with the web user
     destination = os.path.join('%s:/web/%s/' % 
@@ -252,7 +252,7 @@ def setup_project(config, args):
     requirements = os.path.join(args.project.path, 'REQUIREMENTS')
     if os.path.isfile(requirements):
         proc = subprocess.Popen(['scp', requirements, 
-            '%s:/web/%s/.' % (ssh_host, args.project.title)], 
+            'web@%s:/web/%s/.' % (node, args.project.title)], 
             stdout=subprocess.PIPE)
         proc.communicate()
     
