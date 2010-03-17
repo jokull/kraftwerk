@@ -7,4 +7,3 @@ services:
     - files
 workers: 1
 wsgi: '{{ project_title }}.wsgi:application'
-packages: django
