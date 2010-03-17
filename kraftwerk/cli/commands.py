@@ -245,6 +245,10 @@ def setup_project(config, args):
         log.error("Sync error: %s" % stderr)
         sys.exit(stderr)
     print "Synced project %s to %s" % (args.project.title, node)
+    if args.sync_only:
+        return
+    
+    # Transfer pip requirements file
     requirements = os.path.join(args.project.path, 'REQUIREMENTS')
     if os.path.isfile(requirements):
         proc = subprocess.Popen(['scp', requirements, 
@@ -252,6 +256,7 @@ def setup_project(config, args):
             stdout=subprocess.PIPE)
         proc.communicate()
     
+    # Put together the setup script
     environment = args.project.environment()
     tpl = config.templates.get_template('project_setup.sh')
     cmd = tpl.render(dict(project=args.project, new=new, 
@@ -259,13 +264,16 @@ def setup_project(config, args):
         upgrade_packages=args.upgrade_packages))
     proc = subprocess.Popen(['ssh', ssh_host, cmd])
     proc.communicate()
-    print "Basic project setup completed (%s to %s)" % (
-        args.project.title, node)
-    if not args.no_service_setup:
+    
+    # TODO detect new services
+    if not args.no_service_setup and new:
         for service in args.project.services(node):
             proc = subprocess.Popen(['ssh', ssh_host, 
                 service.setup_script])
             proc.communicate()
+            
+    print "Project setup (%s to %s)" % (
+        args.project.title, node)
 
 setup_project.parser.add_argument('project', action=ProjectAction,
     nargs='?', 
@@ -287,6 +295,10 @@ setup_project.parser.add_argument('--restart',
     default=False, action='store_true',
     help="Bring down and start the site WSGI service again. Default is to send" \
          "a HUP signal to the process to reload it. ")
+         
+setup_project.parser.add_argument('--sync-only',
+    default=False, action='store_true',
+    help="Only sync files across and exit.")
 
 @command
 def env(config, args):
