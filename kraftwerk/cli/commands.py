@@ -286,8 +286,8 @@ setup_project.parser.add_argument('--restart',
 def env(config, args):
     """List all project service environment variables, for 
     convenience."""
-    for key, value in args.project.environment():
-        print "%s: \"%s\"" % (key, value)
+    tpl = config.templates.get_template("env.sh")
+    print tpl.render(dict(project=args.project))
 
 env.parser.add_argument('project', action=ProjectAction, nargs='?',
     help="Path to the project you want to set up. Defaults to current directory.")

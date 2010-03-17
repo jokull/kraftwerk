@@ -18,14 +18,14 @@ Design notes, terminology
 
 The admin installs kraftwerk on his own computer. The admin 
 pushes projects to nodes. Server nodes do not require a kraftwerk 
-library. 
+library. Server nodes are referred to by their hostname (can be 
+anything because kraftwerk appends your /etc/hosts). 
 
-Server nodes are referred to by their hostname (can be anything 
-because kraftwerk appends your /etc/hosts). 
-
-Projects are referred to by their folder name. Projects root folders 
-are virtualenvs. Project root folders contain a Python package which 
-would be your webapp.
+Kraftwerk also helps you start WSGI projects (although it is 
+completely agnostic to frameworks or library requirements). Project 
+root folders are virtualenvs. Project root folders contain a Python 
+package which would be your webapp. Projects include a kraftwerk.yaml 
+config too where you can specify domains and various things.
 
 The kraftwerk cli (command line interface) is path aware. If executed 
 inside a project directory it interacts with that project.
@@ -37,16 +37,38 @@ Kraftwerk consults a ~/.kraftwerk.yaml file for configuration. This is
 generated from a questionnaire when you first call the kraftwerk cli.
 Currently this config is mainly used to interface libcloud drivers.
 
+~/.kraftwerk.yaml
+
++ provider (So far EC2 is tested)
++ user (EC2=Access-Key-ID; Rackspace=Username)
++ secret (EC2=Secret-Access-Key)
++ image_id (EC2=AMI-ID)
++ size_id = (EC2=m1.small)
++ securitygroup (EC2 not required)
++ keyname (EC2 not required)
++ default_node - Don't need to specify --node in CLI
++ templates - Path to templates directory for overwriting
+
 Secondary configuration is at the project level. Use the kraftwerk 
 `init` command to generate a project skeleton and kraftwerk supplies a
 default YAML settings file that defines certain behavior of a 
 deployed project.
 
+PROJECT/kraftwerk.yaml
+
++ version - Currently not used
++ domain - Hostname of the main virtualhost
++ aliases - A list of any additional hostnames (HTTP redirect to main)
++ services - List of services the server node will supply to the site
++ workers - gunicorn workers
++ wsgi - module.module:callable to WSGI app
++ packages - space seperated list of packages to pip install
+
 User templates
 --------------
 
-Most scripts and files in the project skeleton can be tailored and 
-changed by supplying a secondary template directory in the admin 
+Most server scripts and files in the project skeleton can be tailored 
+and changed by supplying a secondary template directory in the admin 
 config. This means you can tweak default parameter and add packages 
 to the system install procedure among other things. Currently there 
 is no way to change the project skeleton structure although this is a 
@@ -96,6 +118,11 @@ auth challenges. Kraftwerk thinly veils these differences and simply
 passes user or user/secret credentials to the libcloud provider 
 driver.
 
+If you're new to EC2 keep in mind that SSH and HTTP ports should be 
+open in the security group. For some reason you also need a key pair 
+to create servers. Kraftwerk actually uses your own SSH public key to 
+login.
+
     $ virtualenv kraftwerk # Assuming virtualenv that includes pip
     $ cd kraftwerk
     $ source bin/activate
@@ -109,31 +136,6 @@ driver.
 If kraftwerk complains about libcloud missing install it like this:
 
     pip install -e git+git://github.com/cloudkick/libcloud.git#egg=libcloud
-
-YAML Configuration
-------------------
-
-~/.kraftwerk.yaml
-
-+ provider (So far EC2 is tested)
-+ user (EC2=Access-Key-ID; Rackspace=Username)
-+ secret (EC2=Secret-Access-Key)
-+ image_id (EC2=AMI-ID)
-+ size_id = (EC2=m1.small)
-+ securitygroup (EC2 not required)
-+ keyname (EC2 not required)
-+ default_node - Don't need to specify --node in CLI
-+ templates - Path to templates directory for overwriting
-
-PROJECT/kraftwerk.yaml
-
-+ version - Currently not used
-+ domain - Hostname of the main virtualhost
-+ aliases - A list of any additional hostnames (HTTP redirect to main)
-+ services - List of services the server node will supply to the site
-+ workers - gunicorn workers
-+ wsgi - module.module:callable to WSGI app
-+ packages - space seperated list of packages to pip install
 
 Server Stack
 ------------
@@ -168,24 +170,11 @@ Todo
 + Logging (possibly with a nice api)
 + libcloud requirement
 
-Installation
-------------
-
-virtualenv way:
-
-    virtualenv kraftwerk
-    source kraftwerk/bin/activate
-    pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
-    kraftwerk init ~/Code/newproject
-
-You may have to install libcloud manually with `python setup.py 
-install` (refer to `REQUIREMENTS` file for git location). 
-
 Inspiration
 -----------
 
 + Heroku
-+ Silver Lining, markdoc - big chunks of code were taken from these projects
++ Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks of code were taken from these projects
 
 License
 -------
