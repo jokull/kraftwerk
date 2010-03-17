@@ -37,7 +37,6 @@ def main(cmd_args=None):
     config = Config.for_file(args.config)
     
     logging.getLogger('kraftwerk').setLevel(getattr(logging, args.log_level))
-    
     command = getattr(commands, args.command.replace('-', '_'))
     return command(config, args)
 

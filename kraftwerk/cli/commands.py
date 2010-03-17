@@ -245,6 +245,12 @@ def setup_project(config, args):
         log.error("Sync error: %s" % stderr)
         sys.exit(stderr)
     print "Synced project %s to %s" % (args.project.title, node)
+    requirements = os.path.join(args.project.path, 'REQUIREMENTS')
+    if os.path.isfile(requirements):
+        proc = subprocess.Popen(['scp', requirements, 
+            '%s:/web/%s/.' % (ssh_host, args.project.title)], 
+            stdout=subprocess.PIPE)
+        proc.communicate()
     
     environment = args.project.environment()
     tpl = config.templates.get_template('project_setup.sh')
@@ -291,6 +297,34 @@ def env(config, args):
 
 env.parser.add_argument('project', action=ProjectAction, nargs='?',
     help="Path to the project you want to set up. Defaults to current directory.")
+
+@command
+def stab(config, args):
+    """Execute a shell command in the project environment. Useful for 
+    Django syncdb and such."""
+    node = getattr(args, "node", config.get("default_node"))
+    if node is None:
+        sys.exit("Node argument required.")
+    ssh_host = 'root@%s' % node
+    tpl = config.templates.get_template("env.sh")
+    cmd = tpl.render(dict(project=args.project))
+    cmd = '\n'.join([cmd, ' '.join(args.c)])
+    proc = subprocess.Popen(['ssh', '-o', 'StrictHostKeyChecking=no',
+        ssh_host, cmd])
+    stdout, stderr = proc.communicate()
+    if stderr:
+        print u'Error: %s' % stderr
+    if stdout:
+        print stdout
+    
+
+stab.parser.add_argument('project', action=ProjectAction, nargs='?',
+    help="Path to the project you want to set up. Defaults to current directory.")
+stab.parser.add_argument('--node', required=False, 
+    help="Server node to interact with.")
+stab.parser.add_argument('-c', nargs='+')
+
+
 
 @command
 def destroy_project(config, args):

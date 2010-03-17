@@ -123,15 +123,17 @@ open in the security group. For some reason you also need a key pair
 to create servers. Kraftwerk actually uses your own SSH public key to 
 login.
 
+Here kraftwerk itself is in a virtualenv - you may wish to install system wide.
+
     $ virtualenv kraftwerk # Assuming virtualenv that includes pip
     $ cd kraftwerk
     $ source bin/activate
     $ pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
-    $ kraftwerk create-node liebe
+    $ kraftwerk create-node cloud.server # Create a server that we'll reference as liebe (hostname is eventually aliased in /etc/hosts)
     > [answer some questions, creates ~/.kraftwerk.yaml]
-    $ kraftwerk init calculator
+    $ kraftwerk init myproject # Create a kraftwerk project called `myproject` - nevermind the Django stuff - it's there for reference sake only
     $ cd calculator
-    $ kraftwerk setup-project --node liebe # From within project root
+    $ kraftwerk setup-project --node cloud.server # From within project root (cloud.server = that server we created just now)
 
 If kraftwerk complains about libcloud missing install it like this:
 
@@ -162,6 +164,32 @@ cache control. Tornado manages expiry of static files quite well by
 doing a checksum of files and appending a query parameter using 
 template helpers. This invalidates something like 99% of all caches. 
 Kraftwerk leaves this to the application to implement.
+
+Helper commands
+---------------
+
+### stab
+
+Stab executes one-off shell commands in the project environment on a 
+given node. This is useful for commands like syncdb or quick 
+introspection. 
+
+    kraftwerk stab --node cloud.server -c DJANGO_SETTINGS_MODULE=myproject.settings django-admin.py syncdb
+
+### env
+
+This is a convenience utility. It simply prints your site environment 
+as computed by kraftwerk. It us useful to paste into a terminal for 
+debugging on the server.
+
+Testing locally
+---------------
+
+I'm using VirtualBox to test projects locally. I manually create a 
+minimal Ubuntu, overwrite /root/.ssh/authorized_keys, edit my 
+/etc/hosts and run the kraftwerk setup-node against it. Even better 
+would be some VServer/XEN drivers for libcloud which would in theory 
+enable you to use the create-node command locally too.
 
 Todo
 ----
