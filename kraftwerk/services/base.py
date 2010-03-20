@@ -3,9 +3,8 @@ import kraftwerk
 
 class BaseService(object):
     
-    def __init__(self, project, node):
+    def __init__(self, project):
         self.project = project
-        self.node = node
     
     @property
     def name(self):
@@ -24,10 +23,10 @@ class BaseService(object):
     def destroy_script(self):
         return self._script_helper('destroy.sh')
     
-    def load(self):
+    def load(self, node):
         raise NotImplementedError
     
-    def dump(self):
+    def dump(self, node):
         raise NotImplementedError
     
     def env(self):

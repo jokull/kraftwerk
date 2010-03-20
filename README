@@ -147,7 +147,7 @@ Python stack: Crypto, PIL, DB drivers
 
 `web` user and a `/web` directory to contain project code and uploads
 
-Consult the `server_setup.sh` script for details.
+Consult the `node_setup.sh` script for details.
 
 Static files
 ------------

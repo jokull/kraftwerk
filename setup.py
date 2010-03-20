@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 import os, re
 
 from os.path import join, dirname, abspath, curdir, relpath

@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 """This script is adapted from Ian Bicking's Silver Lining project
 which is under GPLv2 licensing."""
 

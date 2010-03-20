@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import with_statement
+
 import copy
 import yaml
 import os
@@ -86,6 +90,9 @@ class Config(dict):
         if (key not in self):
             return # fail silently.
         return dict.__delitem__(self, key)
+    
+    def template(self, name, **context):
+        return self.templates.get_template(name).render(dict(self, **context))
     
     @property
     def _driver(self):

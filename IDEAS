@@ -1,0 +1,28 @@
+Services load / dump
+====================
+
+Remember the project dumps and loads run through all services a 
+project defines and aggregate folder paths left behind each service's
+dump process.
+
+Where do files end up?
+----------------------
+
+By default the script could print the location of a tarball on the 
+server - maybe ask "scp to home folder?"
+
+The compiled dump could manifest.
+
+    kraftwerk dump --manifest s3 --node myserver
+    kraftwerk dump --node myserver
+
+Exclude include services
+------------------------
+
+  kraftwerk dump --exclude files
+
+CDN
+===
+
+Use s3fslite? It could be written like a files service except files 
+get eventually synced to S3.

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import with_statement
+
 import os, subprocess, sys
 import yaml
 
@@ -52,14 +56,14 @@ class Project(object):
         pass
     
     @cached_list
-    def services(self, node=None, strict=False):
+    def services(self, strict=False):
         for service in self.config.get('services', []):
             try:
                 mod = __import__('kraftwerk.services.' + service, fromlist=[''])
             except ImportError:
                 if strict:
                     raise ValueError, 'kraftwerk does not support a %s' % service
-            yield mod.Service(self, node)
+            yield mod.Service(self)
     
     @cached_list
     def environment(self):
@@ -106,6 +110,6 @@ class Project(object):
                '--quiet',
                self.src_path, dest]
         if os.path.isfile(exclude):
-            cmd.insert(2, '--exclude-from=%s' % exlude)
+            cmd.insert(1, '--exclude-from=%s' % exlude)
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
         return proc.communicate()
