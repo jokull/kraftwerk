@@ -279,13 +279,13 @@ def setup_project(config, args):
             args.node.ssh(service.setup_script)
             
     print u"%s live at %r" % (args.project.config["domain"], args.node.hostname)
+    
+setup_project.parser.add_argument('node', action=NodeAction, nargs='?',
+    help="Server node to interact with.")
 
 setup_project.parser.add_argument('project', action=ProjectAction,
     nargs='?', 
     help="Path to the project you want to set up. Defaults to current directory.")
-    
-setup_project.parser.add_argument('--node', action=NodeAction, 
-    required=False, help="Server node to interact with.")
     
 setup_project.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
@@ -305,14 +305,25 @@ setup_project.parser.add_argument('--sync-only',
     default=False, action='store_true',
     help="Only sync files across and exit.")
 
-@command
-def env(config, args):
-    """List all project service environment variables, for 
-    convenience."""
-    print config.template("env.sh", project=args.project)
 
-env.parser.add_argument('project', action=ProjectAction, nargs='?',
-    help="Path to the project you want to set up. Defaults to current directory.")
+@command
+def destroy_project(config, args):
+    """Remove project from a node with all related services and 
+    files."""
+    log = logging.getLogger('kraftwerk.destroy-project')
+    args.node.ssh(config.template("project_destroy.sh", project=args.project))
+    print "Project %s removed from node %s" % \
+        (args.project.title, args.node)
+    for service in args.project.services(args.node):
+        args.node.ssh(service.destroy_script)
+
+destroy_project.parser.add_argument('node', action=NodeAction, nargs='?',
+    help="Server node to interact with.")
+
+destroy_project.parser.add_argument('project', action=ProjectAction, 
+    nargs='?',
+    help="Path to the project you want to REMOVE from a server node.")
+
 
 @command
 def stab(config, args):
@@ -327,34 +338,23 @@ def stab(config, args):
     if stdout:
         print stdout
     
-
-stab.parser.add_argument('project', action=ProjectAction, nargs='?',
-    help="Path to the project you want to set up. Defaults to current directory.")
     
-stab.parser.add_argument('node', action=NodeAction, nargs='?', 
+stab.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")
 
-stab.parser.add_argument('--user', '-u', help="User to login and issue command as.", default="web")
+stab.parser.add_argument('project', action=ProjectAction, nargs='?', 
+    help="Path to the project you want to set up. Defaults to current directory.")
 
 stab.parser.add_argument('--script', '-s', nargs='+', required=True)
 
+stab.parser.add_argument('--user', '-u', help="User to login and issue command as.", default="web")
 
 
 @command
-def destroy_project(config, args):
-    """Remove project from a node with all related services and 
-    files."""
-    log = logging.getLogger('kraftwerk.destroy-project')
-    args.node.ssh(config.template("project_destroy.sh", project=args.project))
-    print "Project %s removed from node %s" % \
-        (args.project.title, args.node)
-    for service in args.project.services(args.node):
-        args.node.ssh(service.destroy_script)
+def env(config, args):
+    """List all project service environment variables, for 
+    convenience."""
+    print config.template("env.sh", project=args.project)
 
-
-destroy_project.parser.add_argument('project', action=ProjectAction, 
-    nargs='?',
-    help="Path to the project you want to REMOVE from a server node.")
-    
-destroy_project.parser.add_argument('node', action=NodeAction, 
-    required=False, help="Server node to interact with.")
+env.parser.add_argument('project', action=ProjectAction, nargs='?',
+    help="Path to the project you want to set up. Defaults to current directory.")
