@@ -30,43 +30,6 @@ config too where you can specify domains and various things.
 The kraftwerk cli (command line interface) is path aware. If executed 
 inside a project directory it interacts with that project.
 
-Configuration
--------------
-
-Kraftwerk consults a ~/.kraftwerk.yaml file for configuration. This is 
-generated from a questionnaire when you first call the kraftwerk cli.
-Currently this config is mainly used to interface libcloud drivers.
-
-~/.kraftwerk.yaml
-
-+ provider (So far EC2 is tested)
-+ user (EC2=Access-Key-ID; Rackspace=Username)
-+ secret (EC2=Secret-Access-Key)
-+ image_id (EC2=AMI-ID)
-+ size_id = (EC2=m1.small)
-+ securitygroup (EC2, uses `default` if not specified)
-+ keyname (EC2, required although not used for root access)
-+ default_node - Don't need to specify --node in CLI
-+ templates - Path to templates directory for overwriting
-
-Secondary configuration is at the project level. Use the kraftwerk 
-`init` command to generate a project skeleton and kraftwerk supplies a
-default YAML settings file that defines certain behavior of a 
-deployed project.
-
-PROJECT/kraftwerk.yaml
-
-+ version - Currently not used
-+ domain - Hostname of the main virtualhost
-+ aliases - A list of any additional hostnames (HTTP redirect to main)
-+ services - List of services the server node will supply to the site
-+ workers - gunicorn workers
-+ wsgi - module.module:callable to WSGI app
-+ packages - space seperated list of packages to pip install
-
-User templates
---------------
-
 Most server scripts and files in the project skeleton can be tailored 
 and changed by supplying a secondary template directory in the admin 
 config. This means you can tweak default parameter and add packages 
@@ -74,13 +37,14 @@ to the system install procedure among other things. Currently there
 is no way to change the project skeleton structure although this is a 
 possible planned feature.
 
-Project deployment
-------------------
+Kraftwerk supplies additional services to projects that request them.
+These are databases, key-value storages, cache, queues and certain 
+I/O. Services are coupled with a `setup.sh` template script run each 
+time a new project is deployed.
 
-Setup and deployment of projects is run from the same non-destructive 
-command, `setup-project`. Kraftwerk detects new projects and runs 
-setup for each defined service. There is a distinction between 
-reloading and restarting services (in the name of availability).
+Services should expect to be interrogated for data per project (in 
+bulk). This is for purposes of data migration between nodes and 
+backup. Think: SQL dumps and loads. (This is on my TODO list).
 
 Development vs. stage vs. live
 ------------------------------
@@ -96,54 +60,6 @@ cares about admin settings, project settings and a Python WSGI
 codebase. Additionally kraftwerk wants to make it easy to bundle 
 website data for easy backup and restore (refer to "Services" 
 section).
-
-Services
---------
-
-These are databases, key-value storages, cache, queues and certain 
-I/O. Services are coupled with a `setup.sh` template script run each 
-time a new project requests it's "services".
-
-Services should expect to be interrogated for data per project (in 
-bulk). This is for purposes of data migration between nodes and 
-backup. Think: SQL dumps and loads.
-
-Quick Start
------------
-
-Kraftwerk uses libcloud under the hood to commission servers. Cloud 
-providers have different APIs which libcloud attempts to abstract as 
-much as possible. Some have secret API keys, and some have user/pass 
-auth challenges. Kraftwerk thinly veils these differences and simply 
-passes user or user/secret credentials to the libcloud provider 
-driver.
-
-If you're new to EC2 keep in mind that SSH and HTTP ports should be 
-open in the security group. For some reason you also need a key pair 
-to create servers. Kraftwerk actually uses your own SSH public key to 
-login.
-
-Here kraftwerk itself is in a virtualenv - you may wish to install system wide.
-
-    $ virtualenv kraftwerk # Assuming virtualenv that includes pip
-    $ cd kraftwerk
-    $ source bin/activate
-    $ pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
-    $ kraftwerk create-node cloud.server # Create a server that we'll reference as liebe (hostname is eventually aliased in /etc/hosts)
-    > [answer some questions, creates ~/.kraftwerk.yaml]
-    $ echo "default_node: cloud.server" >> ~/.kraftwerk.yaml
-    $ kraftwerk init myproject # Create a kraftwerk project called `myproject` - nevermind the Django stuff - it's there for reference sake only
-    $ cd calculator
-    $ kraftwerk setup-project # From within project root (cloud.server = that server we created just now)
-
-If kraftwerk complains about libcloud missing install it like this:
-
-    pip install -e git+git://github.com/cloudkick/libcloud.git#egg=libcloud
-
-Some users have reported that libcloud has further dependencies with 
-this installation method. Try this:
-
-    pip install http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
 
 Server Stack
 ------------
@@ -171,34 +87,6 @@ doing a checksum of files and appending a query parameter using
 template helpers. This invalidates something like 99% of all caches. 
 Kraftwerk leaves this to the application to implement.
 
-Project commands
-----------------
-
-Usage: "kraftwerk command [node] [project] [--options ...]"
-
-+ `node` is the server hostname defaulting to your config 
-  "default_node" value.
-+ `project` is the OS path to the project root defaulting to the 
-  current directory
-
-### setup-project
-
-### destroy-project
-
-### stab
-
-Stab executes one-off shell commands in the project environment on a 
-given node. This is useful for commands like syncdb or debugging. 
-
-    kraftwerk stab cloud.server -c DJANGO_SETTINGS_MODULE=myproject.settings django-admin.py syncdb
-    kraftwerk stab cloud.server -c tail /var/service/myproject/log/main/current
-
-### env
-
-This is a convenience utility. It simply prints your site environment 
-as computed by kraftwerk. It us useful to paste into a terminal for 
-debugging on the server.
-
 Testing locally
 ---------------
 
@@ -208,11 +96,17 @@ minimal Ubuntu instance, overwrite /root/.ssh/authorized_keys, edit my
 would be some VServer/XEN drivers for libcloud which would in theory 
 enable you to use the create-node command locally too.
 
-TODO
-----
+Known issues
+------------
 
-+ Service dump and load
-+ Logging (possibly with a nice api)
+If kraftwerk complains about libcloud missing install it like this:
+
+    pip install -e git+git://github.com/cloudkick/libcloud.git#egg=libcloud
+
+It has been reported that libcloud has further dependencies with this 
+installation method. Try this:
+
+    pip install http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
 
 Inspiration
 -----------
@@ -227,37 +121,3 @@ License and such
 No License. No guarantees. Kraftwerk is not suitable for 
 non-disposable servers. Don't run it against a box that isn't 
 specifically for kraftwerk hosting.
-
-Wishlist
---------
-
-I wrote this to address this and scratch this itch. Kept for fun and 
-referencing my progress. 
-
-+ Easy to get up and going locally with a Django project - ideally 
-one or two commands until there's an activated virtualenv and my 
-preferred Django project skeleton is inside TextMate. [DONE]
-+ A directory of deployment configuration where I define the caching 
-schema, number of workers, staging and live URL's, perhaps super user
-accounts. [DONE you define workers a main domain and aliases]
-+ Command line tools to load and dump data from _all_ sources 
-(PostgreSQL, redis, CouchDB, user uploaded files etc.). Some S3 
-backup points perhaps. Something like the Bundle feature in Heroku.
-[Support is planned for PostgreSQL, redis and files]
-+ Easy migration strategy for scaling to multiple servers.
-+ Easy inspection of data and node health. [PLANNED]
-+ Easy destroy/create of nodes. [DONE]
-+ Easy running one-off commands in the right environment on a remote 
-server (think Django syncdb). Or easy dropping into a remote bash 
-shell with everything set up for a project.
-+ Easy local testing - both quick for code-alt+tab-refresh action and 
-a full stack VirtualBox/VMWare deployment. [When libcloud gets a 
-VirtualBox driver this will be easy]
-+ Easy CDN management at the application level - Environments should 
-be aware of how to serve static media. [This might be hard]
-+ Easy to venture off the beaten path - this is the enemy of 
-automation! [Server scripts and project init skeleton is template 
-based - user can define own template directory to overwrite specific
-files]
-+ Easy to define complimentary processes (like worker daemons). 
-[Haven't given this much tought]

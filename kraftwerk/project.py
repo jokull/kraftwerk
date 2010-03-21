@@ -39,10 +39,10 @@ class Project(object):
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.title = os.path.basename(self.path)
-        self.src_path = os.path.join(self.path, self.title)
         self._services = None
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
+        self.src_path = os.path.join(self.path, self.config.get('src', self.title))
     
     def __unicode__(self):
         return self.title
@@ -110,6 +110,6 @@ class Project(object):
                '--quiet',
                self.src_path, dest]
         if os.path.isfile(exclude):
-            cmd.insert(1, '--exclude-from=%s' % exlude)
+            cmd.insert(1, '--exclude-from=%s' % exclude)
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
         return proc.communicate()
