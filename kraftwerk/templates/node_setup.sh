@@ -10,11 +10,10 @@ easy_install http://github.com/benoitc/gunicorn/zipball/master
 /usr/sbin/runsvdir-start &>/dev/null & # Background and quiet
 mkdir -p /var/service
 
-PG_TRUST="local sameuser all trust"
 PG_HBA="/etc/postgresql/8.4/main/pg_hba.conf"
-if [ "$PG_TRUST" != "`tail -1 $PG_HBA`" ]; then
-    echo "$PG_TRUST" >> $PG_HBA
-fi
+cat > $PG_HBA << "EOF"
+{% include 'pg_hba.conf' %}
+EOF
 
 /etc/init.d/nginx start
 /etc/init.d/postgresql-8.4 reload

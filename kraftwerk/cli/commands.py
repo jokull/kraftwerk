@@ -226,8 +226,7 @@ create_node.parser.add_argument('--image-name',
 @command
 def setup_node(config, args):
     """Install software and prepare a node for kraftwerk action."""
-    stdout = args.noisy and None or subprocess.PIPE
-    stdin, stderr = args.node.ssh(config.template("node_setup.sh"), stdout=stdout)
+    stdin, stderr = args.node.ssh(config.template("node_setup.sh"))
     if stderr:
         print stderr
     else:
@@ -235,9 +234,6 @@ def setup_node(config, args):
     
 setup_node.parser.add_argument('node', action=NodeAction, 
     help="Server node to interact with.")
-setup_node.parser.add_argument('--noisy',
-    default=False, action='store_true', 
-    help="Print setup stdout. Small entertainment factor.")
 
 @command
 def setup_project(config, args):

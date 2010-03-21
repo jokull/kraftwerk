@@ -131,9 +131,10 @@ Here kraftwerk itself is in a virtualenv - you may wish to install system wide.
     $ pip install -e hg+http://bitbucket.org/jokull/kraftwerk/#egg=kraftwerk
     $ kraftwerk create-node cloud.server # Create a server that we'll reference as liebe (hostname is eventually aliased in /etc/hosts)
     > [answer some questions, creates ~/.kraftwerk.yaml]
+    $ echo "default_node: cloud.server" >> ~/.kraftwerk.yaml
     $ kraftwerk init myproject # Create a kraftwerk project called `myproject` - nevermind the Django stuff - it's there for reference sake only
     $ cd calculator
-    $ kraftwerk setup-project --node cloud.server # From within project root (cloud.server = that server we created just now)
+    $ kraftwerk setup-project # From within project root (cloud.server = that server we created just now)
 
 If kraftwerk complains about libcloud missing install it like this:
 
@@ -170,16 +171,27 @@ doing a checksum of files and appending a query parameter using
 template helpers. This invalidates something like 99% of all caches. 
 Kraftwerk leaves this to the application to implement.
 
-Helper commands
----------------
+Project commands
+----------------
+
+Usage: "kraftwerk command [node] [project] [--options ...]"
+
++ `node` is the server hostname defaulting to your config 
+  "default_node" value.
++ `project` is the OS path to the project root defaulting to the 
+  current directory
+
+### setup-project
+
+### destroy-project
 
 ### stab
 
 Stab executes one-off shell commands in the project environment on a 
-given node. This is useful for commands like syncdb or quick 
-introspection. 
+given node. This is useful for commands like syncdb or debugging. 
 
-    kraftwerk stab --node cloud.server -c DJANGO_SETTINGS_MODULE=myproject.settings django-admin.py syncdb
+    kraftwerk stab cloud.server -c DJANGO_SETTINGS_MODULE=myproject.settings django-admin.py syncdb
+    kraftwerk stab cloud.server -c tail /var/service/myproject/log/main/current
 
 ### env
 
@@ -206,7 +218,8 @@ Inspiration
 -----------
 
 + Heroku
-+ Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks of code were taken from these projects
++ Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks 
+of code were taken from these projects.
 
 License and such
 ----------------

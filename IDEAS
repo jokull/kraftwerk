@@ -26,3 +26,20 @@ CDN
 
 Use s3fslite? It could be written like a files service except files 
 get eventually synced to S3.
+
+Templates
+=========
+
+Maybe scripts could be defined per-node or per-project. Similar to 
+Django's contrib.admin fallthrough logic - from most specific to least
+specific. Example loading pg_hba.conf:
+
+    user_templates/hostname/pg_hba.conf
+    user_templates/pg_hba.conf
+    kraftwerk_templates/pg_hba.conf
+
+Perhaps a --templates hook should be provided. Admins could then keep 
+track of template folders. Kind of like puppet recipes but completely 
+push based.
+
+    kraftwerk setup-node cloud.server --templates ~/kraftwerk-recipes/master-slave-db
