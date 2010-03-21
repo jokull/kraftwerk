@@ -43,3 +43,9 @@ track of template folders. Kind of like puppet recipes but completely
 push based.
 
     kraftwerk setup-node cloud.server --templates ~/kraftwerk-recipes/master-slave-db
+
+Deployment
+==========
+
+Maybe projects could specify a path to check for HTTP 1.0 200. It 
+would serve as a last check at the gate before deployment.
