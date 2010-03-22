@@ -238,10 +238,10 @@ setup_node.parser.add_argument('node', action=NodeAction,
     help="Server node to interact with.")
 
 @command
-def setup_project(config, args):
+def deploy(config, args):
     """Sync and/or setup a WSGI project. Kraftwerk detects a first-
     time setup and runs service setup."""
-    log = logging.getLogger('kraftwerk.setup-project')
+    log = logging.getLogger('kraftwerk.deploy')
     
     stdout, stderr = args.node.ssh('stat /var/service/%s' % args.project.title)
     new = bool(stderr) # Could not find the runit script -> new project (TODO: better heuristic)
@@ -255,14 +255,6 @@ def setup_project(config, args):
         
     if args.sync_only:
         return
-    
-    # Transfer pip requirements file
-    requirements = os.path.join(args.project.path, args.project.src(), 'REQUIREMENTS')
-    if os.path.isfile(requirements):
-        proc = subprocess.Popen(['scp', requirements, 
-            'web@%s:/web/%s/.' % (args.node.hostname, args.project.title)], 
-            stdout=subprocess.PIPE)
-        proc.communicate()
     
     # Put together the setup script
     cmd = config.template("project_setup.sh", 
@@ -278,47 +270,49 @@ def setup_project(config, args):
             
     print u"%s live at %r" % (args.project.config["domain"], args.node.hostname)
     
-setup_project.parser.add_argument('node', action=NodeAction, nargs='?',
+deploy.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")
 
-setup_project.parser.add_argument('project', action=ProjectAction,
+deploy.parser.add_argument('project', action=ProjectAction,
     nargs='?', 
     help="Path to the project you want to set up. Defaults to current directory.")
     
-setup_project.parser.add_argument('--no-service-setup', 
+deploy.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
     help="With this hook kraftwerk overwrites the basic config files but " \
          "does not attempt to set up project services.")
 
-setup_project.parser.add_argument('--upgrade-packages',
+deploy.parser.add_argument('--upgrade-packages',
     default=False, action='store_true',
     help="Upgrade Python packages (adds -U to pip install)")
 
-setup_project.parser.add_argument('--restart',
+deploy.parser.add_argument('--restart',
     default=False, action='store_true',
     help="Bring down and start the site WSGI service again. Default is to send" \
          "a HUP signal to the process to reload it. ")
          
-setup_project.parser.add_argument('--sync-only',
+deploy.parser.add_argument('--sync-only',
     default=False, action='store_true',
     help="Only sync files across and exit.")
 
 
 @command
-def destroy_project(config, args):
+def destroy(config, args):
     """Remove project from a node with all related services and 
     files."""
-    log = logging.getLogger('kraftwerk.destroy-project')
-    args.node.ssh(config.template("project_destroy.sh", project=args.project))
-    print "Project %s removed from node %s" % \
-        (args.project.title, args.node)
-    for service in args.project.services(args.node):
-        args.node.ssh(service.destroy_script)
+    log = logging.getLogger('kraftwerk.destroy')
+    if confirm("Remove project %s from node %s along with all services and data?" % 
+            (args.project.title, args.node.hostname)):
+        args.node.ssh(config.template("project_destroy.sh", project=args.project))
+        print "Project %s removed from node %s" % \
+            (args.project.title, args.node)
+        for service in args.project.services(args.node):
+            args.node.ssh(service.destroy_script)
 
-destroy_project.parser.add_argument('node', action=NodeAction, nargs='?',
+destroy.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")
 
-destroy_project.parser.add_argument('project', action=ProjectAction, 
+destroy.parser.add_argument('project', action=ProjectAction, 
     nargs='?',
     help="Path to the project you want to REMOVE from a server node.")
 
