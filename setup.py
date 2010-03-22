@@ -27,9 +27,11 @@ with open(abspath(join(dirname(__file__), 'REQUIREMENTS')), 'r') as fp:
 setup(
     name             = 'kraftwerk',
     version          = __version__,
-    author           = u"Jökull Sólberg Auðunsson",
+    author           = "Jokull Solberg Audunsson", # Jökull Sólberg Auðunsson
     author_email     = "jokull@solberg.is",
     description      = "A WSGI deployment tool.",
+    license          = "BSD",
+    url              = "http://www.kraftwerk-wsgi.com/",
     zip_safe         = False,
     packages         = find_packages(),
     package_data     = {'kraftwerk': find_package_data()},
