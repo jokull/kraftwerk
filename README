@@ -58,13 +58,13 @@ plumbing for a convenient and quick stage test. Secondarily stage
 deployments are useful for client previews and internal testing.
 
 Kraftwerk is agnostic to the development environment. Kraftwerk only 
-cares about admin settings, project settings and a Python WSGI 
-codebase. Additionally kraftwerk wants to make it easy to bundle 
-website data for easy backup and restore (refer to "Services" 
-section).
+cares about config and a Python WSGI codebase. Additionally kraftwerk 
+wants to make it easy to bundle website data for easy backup and 
+restore (refer to "Services" section).
 
 You may run the setup-node against any ubuntu box with root SSH 
-access. You are not stuck with libcloud.
+access. You are not stuck with libcloud. (I even have it running on 
+Debian Squeeze).
 
 Server Stack
 ------------
@@ -78,23 +78,7 @@ drastically. It also performs well with long-requests (WebSockets).
 
 `web` user and a `/web` directory to contain project code and uploads
 
-Consult the `node_setup.sh` script for details.
-
-Static files
-------------
-
-Currently kraftwerk automatically serves the project static directory 
-with NGINX. Variable static files (user uploads) are handled by the 
-`files` service.
-
-    HTTP GET /uploads/file.jpg [/web/project/uploads/file.jpg]
-    HTTP GET /static/file.jpg  [/web/project/project/static/file.jpg]
-
-Ideally at least the `static` directory would be served with HTTP 
-cache control. Tornado manages expiry of static files quite well by 
-doing a checksum of files and appending a query parameter using 
-template helpers. This invalidates something like 99% of all caches. 
-Kraftwerk leaves this to the application to implement.
+Consult the `node_setup.sh` script template for details.
 
 Testing locally
 ---------------
@@ -124,10 +108,3 @@ Inspiration
 + Heroku
 + Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks 
 of code were taken from these projects.
-
-License and such
-----------------
-
-No License. No guarantees. Kraftwerk is not suitable for 
-non-disposable servers. Don't run it against a box that isn't 
-specifically for kraftwerk hosting.
