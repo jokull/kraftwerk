@@ -86,11 +86,13 @@ def _copy_project(config, title, project_root):
             
             path = os.path.join(dirpath, name)
             rel = os.path.relpath(path, start)
-            dest_path = os.path.join(project_root, rel)
             
-            if "project" in dest_path:
-                dest_path = dest_path.replace("project", title)
-            
+            project_rel = rel
+            if "project" in rel:
+                project_rel = rel.replace("project", title)
+
+            dest_path = os.path.join(project_root, project_rel)
+
             if not os.path.exists(dest_path):
                 if os.path.isdir(path):
                     os.makedirs(dest_path)
