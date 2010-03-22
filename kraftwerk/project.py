@@ -42,10 +42,13 @@ class Project(object):
         self._services = None
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
-        self.src_path = os.path.join(self.path, self.config.get('src', self.title))
+        self.src_path = os.path.join(self.path, self.src())
     
     def __unicode__(self):
         return self.title
+    
+    def src(self):
+        return self.config.get('src', self.title)
     
     def load(self, node):
         # TODO
@@ -93,6 +96,10 @@ class Project(object):
             int(self.config['workers'])
         except ValueError:
             raise ConfigError, "`workers` value must be a number"
+        try:
+            file(os.path.join(self.src_path, 'REQUIREMENTS'))
+        except IOError:
+            raise ConfigError, "REQUIREMENTS file not found - must be under source directory"
         return True
 
     def rsync(self, dest):

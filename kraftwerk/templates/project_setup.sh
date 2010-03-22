@@ -1,12 +1,13 @@
 export PROJECT="{{ project.title }}"
 export ROOT="/web/$PROJECT"
 export SITE_SERVICE="/var/service/$PROJECT"
+export REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
 
 {% if new -%}
 su - web -c "virtualenv $ROOT"
 {%- endif %}
 
-su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $ROOT/REQUIREMENTS"
+su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
 
 cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"
 {% include 'nginx.conf' %}

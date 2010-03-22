@@ -1,4 +1,3 @@
-version: 0
 domain: www.{{ project_title }}.com
 aliases:
     - {{ project_title }}.com

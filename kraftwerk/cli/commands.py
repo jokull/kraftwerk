@@ -206,7 +206,7 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         if nodes:
             public_ip = nodes[0].public_ip[0]
     
-    # At least EC2 passes 
+    # At least EC2 passes only back hostname
     if not IP_RE.match(public_ip):
         from socket import gethostbyname
         public_ip = gethostbyname(public_ip)
@@ -257,7 +257,7 @@ def setup_project(config, args):
         return
     
     # Transfer pip requirements file
-    requirements = os.path.join(args.project.path, 'REQUIREMENTS')
+    requirements = os.path.join(args.project.path, args.project.src(), 'REQUIREMENTS')
     if os.path.isfile(requirements):
         proc = subprocess.Popen(['scp', requirements, 
             'web@%s:/web/%s/.' % (args.node.hostname, args.project.title)], 
