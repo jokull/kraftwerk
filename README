@@ -13,6 +13,8 @@ The creation of nodes follows a 'push' model. This means that servers
 are commissioned from your client machine. Node interaction and 
 commissioning is done with libcloud.
 
+For documentation and examples see http://www.kraftwerk-wsgi.com/
+
 Design notes, terminology
 -------------------------
 
@@ -61,11 +63,18 @@ codebase. Additionally kraftwerk wants to make it easy to bundle
 website data for easy backup and restore (refer to "Services" 
 section).
 
+You may run the setup-node against any ubuntu box with root SSH 
+access. You are not stuck with libcloud.
+
 Server Stack
 ------------
 
 runit, nginx, gunicorn, virtualenv
 Python stack: Crypto, PIL, DB drivers
+
+Of these gunicorn is the most interesting choice. Kraftwerk is making 
+a big bet on this horse. It simplifies configuration and setup 
+drastically. It also performs well with long-requests (WebSockets).
 
 `web` user and a `/web` directory to contain project code and uploads
 
