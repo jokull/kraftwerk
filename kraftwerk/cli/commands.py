@@ -63,7 +63,7 @@ class NodeAction(argparse.Action):
         if value:
             setattr(namespace, self.dest, Node(value))
         else:
-            raise ValueError, "No node value found"
+            sys.exit("No node value found")
             
 
 ## Utilities
@@ -275,7 +275,7 @@ deploy.parser.add_argument('node', action=NodeAction, nargs='?',
 
 deploy.parser.add_argument('project', action=ProjectAction,
     nargs='?', 
-    help="Path to the project you want to set up. Defaults to current directory.")
+    help="Project root directory path. Defaults to current directory.")
     
 deploy.parser.add_argument('--no-service-setup', 
     default=False, action='store_true',
@@ -293,7 +293,7 @@ deploy.parser.add_argument('--restart',
          
 deploy.parser.add_argument('--sync-only',
     default=False, action='store_true',
-    help="Only sync files across and exit.")
+    help="Only sync files across and exit. Quicker if you don't need to reload Python code.")
 
 
 @command
@@ -320,7 +320,7 @@ destroy.parser.add_argument('project', action=ProjectAction,
 @command
 def stab(config, args):
     """Execute a shell command in the project environment. Useful for 
-    Django syncdb and such."""
+    django-admin.py syncdb and such."""
     
     cmd = config.template("env.sh", project=args.project)
     cmd = '\n'.join([cmd, ' '.join(args.script)])
@@ -331,7 +331,7 @@ stab.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")
 
 stab.parser.add_argument('project', action=ProjectAction, nargs='?', 
-    help="Path to the project you want to set up. Defaults to current directory.")
+    help="Project root directory path. Defaults to current directory.")
 
 stab.parser.add_argument('--script', '-s', nargs='+', required=True)
 
@@ -350,23 +350,48 @@ dump.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")
 
 dump.parser.add_argument('project', action=ProjectAction, nargs='?', 
-    help="Path to the project you want to set up. Defaults to current directory.")
+    help="Project root directory path. Defaults to current directory.")
+
+@command
+def load(config, args):
+    """Load a timestamped dumpdir from the same node. (No support yet
+    for user provided dumps). To load data from another node use
+    `sync-services`."""
+    if not args.no_backup:
+        timestamp = args.project.dump(args.node)
+        print "Pre-load backup: %s" % args.project.dump_path(timestamp)
+    args.project.load(args.node, args.timestamp)
+    print "Service data from %s loaded at %s" % (args.timestamp, 
+        args.node.hostname) 
+    
+load.parser.add_argument('node', action=NodeAction, nargs='?',
+    help="Server node to interact with.")
+
+load.parser.add_argument('timestamp', 
+    help="ISO 8601 timestamp. This is the dir name inside " \
+    "/web/project/dump to load data from. (Example: 2010-03-24T15:42:54)")
+
+load.parser.add_argument('project', action=ProjectAction, nargs='?', 
+    help="Project root directory path. Defaults to current directory.")
+         
+load.parser.add_argument('--no-backup', default=False, action='store_true',
+    help="Only sync files across and exit. Quicker if you don't need to reload Python code.")
 
 @command
 def sync_services(config, args):
-    """Snapshot service data and restore on another node. """
+    """Snapshot service data and restore on another node. This is a 
+    destructive action. Kraftwerk does an additional dump before 
+    loading new data just in case."""
     timestamp = args.project.sync_services(args.srcnode, args.destnode)
     
 sync_services.parser.add_argument('srcnode', action=NodeAction, 
-    help="Server node to load data from.")
+    help="Server node to dump data from.")
     
 sync_services.parser.add_argument('destnode', action=NodeAction, 
     help="Server node to load data into.")
 
 sync_services.parser.add_argument('project', action=ProjectAction, nargs='?', 
-    help="Path to the project you want to set up. Defaults to current directory.")
-
-
+    help="Project root directory path. Defaults to current directory.")
 
 @command
 def env(config, args):
@@ -375,4 +400,4 @@ def env(config, args):
     print config.template("env.sh", project=args.project)
 
 env.parser.add_argument('project', action=ProjectAction, nargs='?',
-    help="Path to the project you want to set up. Defaults to current directory.")
+    help="Project root directory path. Defaults to current directory.")
