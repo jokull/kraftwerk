@@ -12,16 +12,17 @@ from kraftwerk.cli.parser import parser
 from kraftwerk.config import Config, ConfigNotFound
 
 def create_config(path):
-    provider = raw_input('Provider [rackspace/ec2_eu_west]: ')
-    user     = raw_input('Provider user: ')
-    secret   = raw_input('Provider secret [optional]: ')
-    image_id = raw_input('Default Ubuntu image: ')
-    size_id  = raw_input('Default node size: ')
+    provider    = raw_input('Provider [rackspace/ec2_eu_west/linode]: ')
+    user        = raw_input('Provider user: ')
+    secret      = raw_input('Provider secret [optional]: ')
+    location_id = raw_input('Provider location [optional]: ')
+    image_id    = raw_input('Default Ubuntu image: ')
+    size_id     = raw_input('Default node size: ')
     tpl = templates.get_template('.kraftwerk.yaml')
     with open(path, 'w') as fp:
         fp.write(tpl.render({'user': user, 'secret': secret,
             'image_id': image_id, 'size_id': size_id, 
-            'provider': provider }))
+            'provider': provider, 'location_id': location_id }))
 
 def main(cmd_args=None):
     """The main entry point for running the kraftwerk CLI."""
