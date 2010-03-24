@@ -95,7 +95,7 @@ Known issues
 Kraftwerk can't pick up the libcloud dependency automatically. You'll 
 have to install it manually like so:
 
-  easy_install http://github.com/cloudkick/libcloud/tarball/master
+    easy_install http://github.com/cloudkick/libcloud/tarball/master
 
 It has been reported that libcloud has further dependencies with this 
 installation method. If you get further errors try this:

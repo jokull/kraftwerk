@@ -232,7 +232,7 @@ def setup_node(config, args):
     if stderr:
         print stderr
     else:
-        print u"Node ready at %s (%s)" % (args.node, public_ip)
+        print u"Node ready at %s" % (args.node.hostname)
     
 setup_node.parser.add_argument('node', action=NodeAction, 
     help="Server node to interact with.")
@@ -243,11 +243,11 @@ def deploy(config, args):
     time setup and runs service setup."""
     log = logging.getLogger('kraftwerk.deploy')
     
-    stdout, stderr = args.node.ssh('stat /var/service/%s' % args.project.title)
-    new = bool(stderr) # Could not find the runit script -> new project (TODO: better heuristic)
+    stdout, stderr = args.node.ssh('stat /var/service/%s' % args.project.name, pipe=True)
+    new = bool(stderr)
     
     # Sync codebase over with the web user
-    destination = 'web@%s:/web/%s/' % (args.node.hostname, args.project.title)
+    destination = 'web@%s:/web/%s/' % (args.node.hostname, args.project.name)
     stdout, stderr = args.project.rsync(destination)
     if stderr:
         log.error("Sync error: %s" % stderr)
@@ -302,10 +302,10 @@ def destroy(config, args):
     files."""
     log = logging.getLogger('kraftwerk.destroy')
     if confirm("Remove project %s from node %s along with all services and data?" % 
-            (args.project.title, args.node.hostname)):
+            (args.project.name, args.node.hostname)):
         args.node.ssh(config.template("project_destroy.sh", project=args.project))
         print "Project %s removed from node %s" % \
-            (args.project.title, args.node)
+            (args.project.name, args.node)
         for service in args.project.services(args.node):
             args.node.ssh(service.destroy_script)
 
@@ -324,11 +324,7 @@ def stab(config, args):
     
     cmd = config.template("env.sh", project=args.project)
     cmd = '\n'.join([cmd, ' '.join(args.script)])
-    stdout, stderr = args.node.ssh(cmd, user=args.user)
-    if stderr:
-        print u'Error: %s' % stderr
-    if stdout:
-        print stdout
+    args.node.ssh(cmd, user=args.user)
     
     
 stab.parser.add_argument('node', action=NodeAction, nargs='?',
@@ -340,6 +336,36 @@ stab.parser.add_argument('project', action=ProjectAction, nargs='?',
 stab.parser.add_argument('--script', '-s', nargs='+', required=True)
 
 stab.parser.add_argument('--user', '-u', help="User to login and issue command as.", default="web")
+
+
+@command
+def dump(config, args):
+    """Create a copy of all service data. Reports a directory with all 
+    dump files."""
+    timestamp = args.project.dump(args.node)
+    print "Dump ready at %s:%s" % (args.node.hostname, 
+        args.project.dump_path(timestamp))
+    
+dump.parser.add_argument('node', action=NodeAction, nargs='?',
+    help="Server node to interact with.")
+
+dump.parser.add_argument('project', action=ProjectAction, nargs='?', 
+    help="Path to the project you want to set up. Defaults to current directory.")
+
+@command
+def sync_services(config, args):
+    """Snapshot service data and restore on another node. """
+    timestamp = args.project.sync_services(args.srcnode, args.destnode)
+    
+sync_services.parser.add_argument('srcnode', action=NodeAction, 
+    help="Server node to load data from.")
+    
+sync_services.parser.add_argument('destnode', action=NodeAction, 
+    help="Server node to load data into.")
+
+sync_services.parser.add_argument('project', action=ProjectAction, nargs='?', 
+    help="Path to the project you want to set up. Defaults to current directory.")
+
 
 
 @command

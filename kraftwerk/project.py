@@ -2,6 +2,7 @@
 
 from __future__ import with_statement
 
+from datetime import datetime
 import os, subprocess, sys
 import yaml
 
@@ -38,25 +39,60 @@ class Project(object):
     
     def __init__(self, path):
         self.path = os.path.abspath(path)
-        self.title = os.path.basename(self.path)
+        self.name = os.path.basename(self.path)
         self._services = None
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
         self.src_path = os.path.join(self.path, self.src())
     
     def __unicode__(self):
-        return self.title
+        return self.name
     
     def src(self):
-        return self.config.get('src', self.title)
+        return self.config.get('src', self.name)
     
-    def load(self, node):
-        # TODO
-        pass
+    def dump_path(self, timestamp):
+        return '/web/%s/dump/%s/' % (self.name, timestamp)
     
     def dump(self, node):
-        # TODO
-        pass
+        timestamp = datetime.now().isoformat().rsplit(".")[0] # '2010-03-23T16:32:22'
+        node.ssh("mkdir -p %s" % self.dump_path(timestamp), user="web")
+        for service in self.services():
+            try:
+                service.dump(node, self.dump_path(timestamp))
+            except NotImplementedError:
+                pass # Report error here? Warning?
+        return timestamp
+    
+    def load(self, node, timestamp):
+        for service in self.services():
+            try:
+                service.load(node, self.dump_path(timestamp))
+            except NotImplementedError:
+                pass # Report error here? Warning?
+    
+    def sync_services(self, src_node, dest_node, timestamp=None):
+        """
+        Uses the dump/load plumbing to transfer project state between
+        two nodes. Does a backup dump first, then a dump+transfer on 
+        the 'from' node. Destructive.
+        ssh-agent is required to do transfers between two nodes.
+        """
+        restore_timestamp = self.dump(dest_node) # backup
+        if timestamp is None:
+            timestamp = self.dump(src_node)
+        rsync_src = self.dump_path(timestamp)
+        rsync_dest = "root@%s:%s" % (dest_node.ip, rsync_src)
+        proc = subprocess.Popen(['ssh-add', '-l'], stdout=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            sys.exit("To use this feature you must be running ssh-agent" + \
+                     " with your relevant key added (%s)." % stdout)
+        rsync_cmd = "rsync -e \"ssh -o StrictHostKeyChecking=no\" --recursive --times --archive --compress --delete %s %s" % (rsync_src, rsync_dest)
+        stdout, stderr = src_node.ssh(rsync_cmd, user="web", pipe=True)
+        if stderr:
+            sys.exit("rsync error: %s" % stderr)
+        self.load(dest_node, timestamp)
     
     @cached_list
     def services(self, strict=False):
@@ -71,7 +107,7 @@ class Project(object):
     @cached_list
     def environment(self):
         for service in self.services():
-            for key, value in service.env().items():
+            for key, value in service.env.items():
                 yield key, value
     
     def is_valid(self):
@@ -103,6 +139,7 @@ class Project(object):
         return True
 
     def rsync(self, dest):
+        print dest
         exclude = os.path.join(self.path, "rsync_exclude.txt")
         cmd = ['rsync',
                '--recursive',

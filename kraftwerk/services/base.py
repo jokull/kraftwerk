@@ -23,12 +23,16 @@ class BaseService(object):
     def destroy_script(self):
         return self._script_helper('destroy.sh')
     
-    def load(self, node):
+    def dump_path(self, timestamp):
+        return os.path.join(self.project.dump_path(timestampe), self.name)
+    
+    def load(self, node, timestamp):
         raise NotImplementedError
     
-    def dump(self, node):
+    def dump(self, node, timestamp):
         raise NotImplementedError
     
+    @property
     def env(self):
         return dict()
     

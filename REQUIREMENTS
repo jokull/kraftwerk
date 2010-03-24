@@ -3,3 +3,4 @@ PyYAML
 Jinja2
 -e git+git://git.apache.org/libcloud.git#egg=libcloud
 virtualenv
+tai64n

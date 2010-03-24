@@ -1,1 +1,1 @@
-rm -rf /web/{{ project.title }}/uploads
+rm -rf /web/{{ project.name }}/uploads

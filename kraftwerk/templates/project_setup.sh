@@ -1,4 +1,4 @@
-export PROJECT="{{ project.title }}"
+export PROJECT="{{ project.name }}"
 export ROOT="/web/$PROJECT"
 export SITE_SERVICE="/var/service/$PROJECT"
 export REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
