@@ -42,11 +42,8 @@ possible planned feature.
 Kraftwerk supplies additional services to projects that request them.
 These are databases, key-value storages, cache, queues and certain 
 I/O. Services are coupled with a `setup.sh` template script run each 
-time a new project is deployed.
-
-Services should expect to be interrogated for data per project (in 
-bulk). This is for purposes of data migration between nodes and 
-backup. Think: SQL dumps and loads. (This is on my TODO list).
+time a new project is deployed. Each service dumps and loads data. See
+commands documentation.
 
 Development vs. stage vs. live
 ------------------------------

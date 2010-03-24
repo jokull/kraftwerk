@@ -1,22 +1,13 @@
 -*- markdown -*-
 
+Warnings
+========
+
+The whole array of commands could do with more warnings. There are 
+some especially damaging commands in there. 
+
 Services load / dump
 ====================
-
-Remember the project dumps and loads run through all services a 
-project defines and aggregate folder paths left behind each service's
-dump process.
-
-Where do files end up?
-----------------------
-
-By default the script could print the location of a tarball on the 
-server - maybe ask "scp to home folder?"
-
-The compiled dump could manifest.
-
-    kraftwerk dump --manifest s3 --node myserver
-    kraftwerk dump --node myserver
 
 Exclude include services
 ------------------------
