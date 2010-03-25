@@ -56,10 +56,12 @@ class Project(object):
     
     def dump(self, node):
         timestamp = datetime.now().isoformat().rsplit(".")[0] # '2010-03-23T16:32:22'
-        node.ssh("mkdir -p %s" % self.dump_path(timestamp), user="web")
+        dump_path = self.dump_path(timestamp)
+        stdout, stderr = node.ssh("mkdir -p %s" % dump_path, user="web")
         for service in self.services():
             try:
-                service.dump(node, self.dump_path(timestamp))
+                stdout, stderr = service.dump(node, dump_path)
+                if stderr: print stderr
             except NotImplementedError:
                 pass # Report error here? Warning?
         return timestamp
@@ -67,7 +69,8 @@ class Project(object):
     def load(self, node, timestamp):
         for service in self.services():
             try:
-                service.load(node, self.dump_path(timestamp))
+                stdout, stderr = service.load(node, self.dump_path(timestamp))
+                if stderr: print stderr
             except NotImplementedError:
                 pass # Report error here? Warning?
     

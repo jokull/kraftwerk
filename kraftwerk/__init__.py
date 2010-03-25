@@ -1,7 +1,7 @@
 import logging
 from os.path import join, dirname
 
-__version__ = '0.0'
+__version__ = '0.1'
 
 templates_root = join(dirname(__file__), 'templates')
 try:
