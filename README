@@ -5,15 +5,34 @@ A WSGI deployment tool - stop being a sysadmin
 Introduction
 ------------
 
-I'm trying to automate deployment and server admin in a sane way. 
-
 By formalizing some project conventions and the server stack, in 
 theory large chunks of the deployment process can be automated.
-The creation of nodes follows a 'push' model. This means that servers
-are commissioned from your client machine. Node interaction and 
-commissioning is done with libcloud.
 
-For documentation and examples see http://www.kraftwerk-wsgi.com/
+"How does it work?" - With configuration files and a command 
+line interface.
+
+"What can I do?" - Create servers with your cloud provider and deploy 
+all your WSGI applications in very few steps.
+
+"What more can I do?" - You define main domains and forward domains, 
+number of server workers per project, and which services you want 
+kraftwerk to provide.
+
+"What are kraftwerk services?" - They're SQL databases, key-value 
+storages and good old writable folders. Kraftwerk defines them 
+programmatically so you can setup and teardown per project 
+automatically.
+
+"Okay cool - what else can I do?" - Projects can dump and load all 
+the data for each service. So you can backup and restore from the 
+command line. Not just SQL. Also user uploaded files for example. 
+
+"Anything else?" - If you have the same project on two nodes you can
+transfer the services state of one node to another. So if you have 
+interesting live data on one node you can load that into a stage node
+for example, with one command.
+
+For examples and documentation see http://www.kraftwerk-wsgi.com/
 
 Design notes, terminology
 -------------------------
@@ -61,7 +80,7 @@ restore (refer to "Services" section).
 
 You may run the setup-node against any ubuntu box with root SSH 
 access. You are not stuck with libcloud. (I even have it running on 
-Debian Squeeze).
+Debian Squeeze and a local VirtualBox for local testing).
 
 Server Stack
 ------------
@@ -77,31 +96,17 @@ drastically. It also performs well with long-requests (WebSockets).
 
 Consult the `node_setup.sh` script template for details.
 
-Testing locally
----------------
-
-I'm using VirtualBox to test projects locally. I manually create a 
-minimal Ubuntu instance, overwrite /root/.ssh/authorized_keys, edit my 
-/etc/hosts and run the kraftwerk setup-node against it. Even better 
-would be some VServer/XEN drivers for libcloud which would in theory 
-enable you to use the create-node command locally too.
-
 Known issues
 ------------
 
-Kraftwerk can't pick up the libcloud dependency automatically. You'll 
-have to install it manually like so:
-
-    easy_install http://github.com/cloudkick/libcloud/tarball/master
-
-It has been reported that libcloud has further dependencies with this 
-installation method. If you get further errors try this:
-
-    pip install http://www.zope.org/Products/ZopeInterface/3.3.0/zope.interface-3.3.0.tar.gz
+Kraftwerk `setup.py` doesn't pick up the libcloud development 
+dependency automatically. To install all dependencies run 
+`pip install -r kraftwerk/REQUIREMENTS`.
 
 Inspiration
 -----------
 
++ This project is very similar to Silver Lining by Ian Bicking - See 
+  FAQ section on kraftwer-wsgi.com
 + Heroku
-+ Ian Bicking's Silver Lining and Zachary Voase's markdoc - big chunks 
-of code were taken from these projects.
++ Markdoc's argparse / YAML config
