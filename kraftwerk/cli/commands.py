@@ -357,6 +357,8 @@ def load(config, args):
     """Load a timestamped dumpdir from the same node. (No support yet
     for user provided dumps). To load data from another node use
     `sync-services`."""
+    if not confirm("WARNING: This isn't considered production ready just yet. Continue?"):
+        return
     if not args.no_backup:
         timestamp = args.project.dump(args.node)
         print "Pre-load backup: %s" % args.project.dump_path(timestamp)
@@ -382,7 +384,8 @@ def sync_services(config, args):
     """Snapshot service data and restore on another node. This is a 
     destructive action. Kraftwerk does an additional dump before 
     loading new data just in case."""
-    timestamp = args.project.sync_services(args.srcnode, args.destnode)
+    if confirm("WARNING: This isn't considered production ready just yet. Continue?"):
+        timestamp = args.project.sync_services(args.srcnode, args.destnode)
     
 sync_services.parser.add_argument('srcnode', action=NodeAction, 
     help="Server node to dump data from.")

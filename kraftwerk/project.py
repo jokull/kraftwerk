@@ -75,8 +75,8 @@ class Project(object):
         """
         Uses the dump/load plumbing to transfer project state between
         two nodes. Does a backup dump first, then a dump+transfer on 
-        the 'from' node. Destructive.
-        ssh-agent is required to do transfers between two nodes.
+        the 'source' node. Destructive. ssh-agent is required to do 
+        transfers between two nodes.
         """
         restore_timestamp = self.dump(dest_node) # backup
         if timestamp is None:
