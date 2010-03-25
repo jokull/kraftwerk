@@ -17,6 +17,7 @@ from kraftwerk.exc import ConfigError
 from kraftwerk.config import Config, path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
+from kraftwerk.compat import relpath
 from kraftwerk import etchosts
 from kraftwerk import services
 
@@ -85,7 +86,7 @@ def _copy_project(config, title, project_root):
         for name in dirnames + filenames:
             
             path = os.path.join(dirpath, name)
-            rel = os.path.relpath(path, start)
+            rel = relpath(path, start)
             
             project_rel = rel
             if "project" in rel:
