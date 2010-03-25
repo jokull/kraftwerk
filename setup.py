@@ -4,10 +4,11 @@ from __future__ import with_statement
 
 import os, re
 
-from os.path import join, dirname, abspath, curdir, relpath
+from os.path import join, dirname, abspath, curdir
 from setuptools import setup, find_packages
 
 from kraftwerk import __version__
+from kraftwerk.compat import relpath
 
 def find_package_data():
     files = []

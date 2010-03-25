@@ -7,7 +7,7 @@ from random import choice
 from functools import wraps
 import argparse
 import virtualenv
-from libcloud.drivers import ec2, rackspace
+from libcloud.drivers import ec2, rackspace, linode
 # Add as you test support for more providers
 
 import kraftwerk
@@ -17,6 +17,7 @@ from kraftwerk.exc import ConfigError
 from kraftwerk.config import Config, path as config_path
 from kraftwerk.cli.parser import subparsers
 from kraftwerk.cli.utils import confirm
+from kraftwerk.compat import relpath
 from kraftwerk import etchosts
 from kraftwerk import services
 
@@ -85,7 +86,7 @@ def _copy_project(config, title, project_root):
         for name in dirnames + filenames:
             
             path = os.path.join(dirpath, name)
-            rel = os.path.relpath(path, start)
+            rel = relpath(path, start)
             
             project_rel = rel
             if "project" in rel:
@@ -162,7 +163,7 @@ def create_node(config, args):
             "Invalid hostname (must contain only letters, numbers, ., and -): %r"
             % args.hostname)
     
-    # Query driver for size and image
+    # Query driver for size, image, and location
     
     image_id = getattr(args, 'image-id', config["image_id"])
     for i in config.driver.list_images():
@@ -180,6 +181,14 @@ def create_node(config, args):
     else:
         sys.exit("Size %s not found for this provider. Aborting." % size_id)
     
+    location_id = getattr(args, 'location-id', config.get("location_id", 0))
+    for l in config.driver.list_locations():
+        if l.id == location_id:
+            location = l
+            break
+    else:
+        sys.exit("Location %s not found for this provider. Aborting." % location_id)
+    
     if isinstance(config.driver, ec2.EC2NodeDriver):
         extra = dict(userdata="""#!/bin/bash
 echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
@@ -190,8 +199,11 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
             extra.update(securitygroup=config["securitygroup"])
     elif isinstance(config.driver, rackspace.RackspaceNodeDriver):
         extra = dict(files={'/root/.ssh/authorized_keys': pubkey})
+    elif isinstance(config.driver, linode.LinodeNodeDriver):
+        from libcloud.base import NodeAuthSSHKey
+        extra = dict(auth=NodeAuthSSHKey(pubkey))
     
-    create_info = dict(name=args.hostname,
+    create_info = dict(name=args.hostname, location=location,
         image=image, size=size, **extra)
     try:
         node = config.driver.create_node(**create_info)

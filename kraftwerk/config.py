@@ -13,6 +13,7 @@ from libcloud.providers import get_driver as libcloud_get_driver
 
 from kraftwerk import templates_root
 from kraftwerk.exc import ConfigError
+from kraftwerk.compat import relpath
 
 path = os.path.join(os.path.expanduser('~'), '.kraftwerk.yaml')
 
@@ -120,11 +121,11 @@ class Config(dict):
         """Get the configuration from a given YAML file."""
         
         if not os.path.exists(filename):
-            relpath = os.path.relpath(os.path.dirname(filename), start=os.getcwd())
+            relative = relpath(os.path.dirname(filename), start=os.getcwd())
             basename = os.path.basename(filename)
-            if relpath == '.':
+            if relative == '.':
                 raise ConfigNotFound("%s was not found in the current directory" % basename)
-            raise ConfigNotFound("%s was not found in %s" % (basename, relpath))
+            raise ConfigNotFound("%s was not found in %s" % (basename, relative))
         
         with open(filename) as fp:
             config = yaml.load(fp) or {}
