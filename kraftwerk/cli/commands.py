@@ -240,7 +240,7 @@ create_node.parser.add_argument('--image-name',
 @command
 def setup_node(config, args):
     """Install software and prepare a node for kraftwerk action."""
-    stdin, stderr = args.node.ssh(config.template("node_setup.sh"))
+    stdin, stderr = args.node.ssh(config.template("scripts/node_setup.sh"))
     if stderr:
         print stderr
     else:
@@ -269,7 +269,7 @@ def deploy(config, args):
         return
     
     # Put together the setup script
-    cmd = config.template("project_setup.sh", 
+    cmd = config.template("scripts/project_setup.sh", 
         project=args.project, new=new, 
         restart=args.restart, 
         upgrade_packages=args.upgrade_packages)
@@ -315,7 +315,7 @@ def destroy(config, args):
     log = logging.getLogger('kraftwerk.destroy')
     if confirm("Remove project %s from node %s along with all services and data?" % 
             (args.project.name, args.node.hostname)):
-        args.node.ssh(config.template("project_destroy.sh", project=args.project))
+        args.node.ssh(config.template("scripts/project_destroy.sh", project=args.project))
         print "Project %s removed from node %s" % \
             (args.project.name, args.node)
         for service in args.project.services(args.node):
@@ -334,7 +334,7 @@ def stab(config, args):
     """Execute a shell command in the project environment. Useful for 
     django-admin.py syncdb and such."""
     
-    cmd = config.template("env.sh", project=args.project)
+    cmd = config.template("scripts/env.sh", project=args.project)
     cmd = '\n'.join([cmd, ' '.join(args.script)])
     args.node.ssh(cmd, user=args.user)
     
@@ -412,7 +412,7 @@ sync_services.parser.add_argument('project', action=ProjectAction, nargs='?',
 def env(config, args):
     """List all project service environment variables, for 
     convenience."""
-    print config.template("env.sh", project=args.project)
+    print config.template("scripts/env.sh", project=args.project)
 
 env.parser.add_argument('project', action=ProjectAction, nargs='?',
     help="Project root directory path. Defaults to current directory.")

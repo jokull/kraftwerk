@@ -113,7 +113,8 @@ class Config(dict):
     def _templates(self):
         loaders = [jinja2.FileSystemLoader(templates_root)]
         if "templates" in self:
-            loaders.insert(0, jinja2.FileSystemLoader(self["templates"]))
+            user_templates = os.path.expanduser(self["templates"])
+            loaders.insert(0, jinja2.FileSystemLoader(user_templates))
         return jinja2.Environment(loader=jinja2.ChoiceLoader(loaders))
     
     @classmethod

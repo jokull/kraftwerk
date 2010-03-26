@@ -10,16 +10,15 @@ su - web -c "virtualenv $ROOT"
 su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
 
 cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"
-{% include 'nginx.conf' %}
+{% include 'conf/nginx.conf' %}
 EOF
 
 mkdir -p $SITE_SERVICE/log/main
 cat > $SITE_SERVICE/run << "EOF"
-{% include 'gunicorn.sh' %}
+{% include 'scripts/gunicorn.sh' %}
 EOF
 cat > $SITE_SERVICE/log/run << "EOF"
-#!/bin/sh
-exec svlogd -tt ./main
+{% include 'scripts/log.sh' %}
 EOF
 
 {% if new -%}
