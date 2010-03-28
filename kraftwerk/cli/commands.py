@@ -240,6 +240,11 @@ create_node.parser.add_argument('--image-name',
 @command
 def setup_node(config, args):
     """Install software and prepare a node for kraftwerk action."""
+    if args.templates:
+        config['templates'].insert(0, args.templates)
+        config.templates = config._templates()
+    print config.template("scripts/node_setup.sh")
+    return
     stdin, stderr = args.node.ssh(config.template("scripts/node_setup.sh"))
     if stderr:
         print stderr
@@ -248,6 +253,11 @@ def setup_node(config, args):
     
 setup_node.parser.add_argument('node', action=NodeAction, 
     help="Server node to interact with.")
+
+setup_node.parser.add_argument('--templates', 
+    help="External template directory. These will take precedence over "
+        "kraftwerk and user templates. You can use this to save and "
+        "organize setup recipes.")
 
 @command
 def deploy(config, args):

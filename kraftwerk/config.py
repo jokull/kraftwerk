@@ -65,6 +65,11 @@ class Config(dict):
     Config additionally passes the template environment and the libcloud 
     driver.
     
+    Config as a `template` key and a `template` attribute. The key is
+    the user configured templates folder path. The attribute is a jinja2
+    template environment with a cascade of loaders. The `_template` 
+    method is used to calculate and recalculate the correct loader.
+    
     """
     
     __metaclass__ = ConfigMeta
@@ -72,7 +77,9 @@ class Config(dict):
     def __init__(self, config_file, config):
         super(Config, self).__init__(flatten(config))
         self.driver = self._driver
-        self.templates = self._templates
+        if isinstance(self.get('templates'), basestring):
+            self['templates'] = [self['templates']]
+        self.templates = self._templates()
         self['meta.config-file'] = config_file
     
     def __getitem__(self, key):
@@ -109,12 +116,14 @@ class Config(dict):
                                'are missing or wrong' % self['provider']
         return driver
     
-    @property
     def _templates(self):
         loaders = [jinja2.FileSystemLoader(templates_root)]
+        # Prepend additional directories
+        # We can call this method again after appending 
         if "templates" in self:
-            user_templates = os.path.expanduser(self["templates"])
-            loaders.insert(0, jinja2.FileSystemLoader(user_templates))
+            for path in self['templates']:
+                templates = os.path.expanduser(path)
+                loaders.insert(-1, jinja2.FileSystemLoader(templates))
         return jinja2.Environment(loader=jinja2.ChoiceLoader(loaders))
     
     @classmethod

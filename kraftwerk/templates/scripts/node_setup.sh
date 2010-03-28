@@ -3,7 +3,7 @@ adduser --disabled-password --gecos=none web
 mkdir -p /web && cp -R /root/.ssh /home/web/.
 chown -R web:web /web /home/web
 apt-get -q update
-apt-get -y -qq install build-essential curl git-core mercurial nginx postgresql rsync runit subversion unzip wget zip
+apt-get -y -qq install build-essential curl git-core mercurial nginx postgresql rsync runit subversion unzip wget zip rabbitmq-server
 apt-get -y -qq install libevent-dev ncurses-dev python-dev python-imaging python-lxml python-numpy python-psycopg2 python-setuptools
 easy_install virtualenv pip gevent
 easy_install http://github.com/benoitc/gunicorn/zipball/master
