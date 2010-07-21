@@ -117,8 +117,9 @@ class Project(object):
         """A best-try attempt at exposing bad config early. Try 
         importing WSGI script, verify some types, required attributes
         etc. """
-        sys.path.insert(0, self.path)
-        sys.path.insert(0, os.path.join(self.path, 'lib/python2.6/site-packages'))
+        from site import addsitedir
+        addsitedir(self.path)
+        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
         wsgi_path = self.config.get('wsgi', '').split(":")
         if not wsgi_path or len(wsgi_path) != 2:
             raise ConfigError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"

@@ -64,7 +64,7 @@ class NodeAction(argparse.Action):
         if value:
             setattr(namespace, self.dest, Node(value))
         else:
-            sys.exit("No node value found")
+            sys.exit("You must specify a 'node' value")
             
 
 ## Utilities
@@ -258,6 +258,7 @@ setup_node.parser.add_argument('--templates',
     help="External template directory. These will take precedence over "
         "kraftwerk and user templates. You can use this to save and "
         "organize setup recipes.")
+    
 
 @command
 def deploy(config, args):
@@ -281,9 +282,10 @@ def deploy(config, args):
     # Put together the setup script
     cmd = config.template("scripts/project_setup.sh", 
         project=args.project, new=new, 
-        restart=args.restart, 
         upgrade_packages=args.upgrade_packages)
-    args.node.ssh(cmd)
+    stdout, stderr = args.node.ssh(cmd, pipe=True)
+    if bool(stderr):
+        print stderr
     
     # TODO detect new services
     if not args.no_service_setup and new:
@@ -307,11 +309,6 @@ deploy.parser.add_argument('--no-service-setup',
 deploy.parser.add_argument('--upgrade-packages',
     default=False, action='store_true',
     help="Upgrade Python packages (adds -U to pip install)")
-
-deploy.parser.add_argument('--restart',
-    default=False, action='store_true',
-    help="Bring down and start the site WSGI service again. Default is to send" \
-         "a HUP signal to the process to reload it. ")
          
 deploy.parser.add_argument('--sync-only',
     default=False, action='store_true',
