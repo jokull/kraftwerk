@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ROOT=/web/{{ project.name }}
+{% include "scripts/env.sh" %}
 export PYTHONPATH=$ROOT
 
 exec 2>&1

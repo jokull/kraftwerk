@@ -113,23 +113,33 @@ class Project(object):
             for key, value in service.env.items():
                 yield key, value
     
+    def _test_app_import(self):
+        from site import addsitedir
+        addsitedir(self.path)
+        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
+        parts = self.config['wsgi'].rsplit(":", 1)
+        if len(parts) == 1:
+            module, obj = module, "application"
+        else:
+            module, obj = parts[0], parts[1]
+        try:
+            __import__(module)
+            mod = sys.modules[module]
+            app = eval(obj, mod.__dict__)
+        except Exception, e:
+            raise ConfigError, 'Module %r could not be imported (Error: "%s")' % (module, e)
+        if app is None:
+            raise ImportError("Failed to find application object: %r" % obj)
+        if not callable(app):
+            raise TypeError("Application object must be callable.")
+        
     def is_valid(self):
         """A best-try attempt at exposing bad config early. Try 
         importing WSGI script, verify some types, required attributes
         etc. """
-        from site import addsitedir
-        addsitedir(self.path)
-        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
-        wsgi_path = self.config.get('wsgi', '').split(":")
-        if not wsgi_path or len(wsgi_path) != 2:
-            raise ConfigError, "You must supply a valid wsgi config param (ex: project.wsgi:application)"
-        try:
-            wsgi_mod = __import__(wsgi_path[0], fromlist=[wsgi_path[0].split(".")[:-1]])
-            wsgi_app = getattr(wsgi_mod, wsgi_path[1])
-        except ImportError, e:
-            raise ConfigError, "WSGI application could not be imported (%s)" % e
-        if not callable(wsgi_app):
-            raise ConfigError, "WSGI application found but not a callable."
+        if not 'wsgi' in self.config:
+            raise ConfigError, "You must specify the WSGI app callable (project_name.server:application)."
+        self._test_app_import()
         if not 'workers' in self.config:
             raise ConfigError, "You must specify the number of workers for the WSGI server."
         try:
