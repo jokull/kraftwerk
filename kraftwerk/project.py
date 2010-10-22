@@ -119,7 +119,7 @@ class Project(object):
         addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
         parts = self.config['wsgi'].rsplit(":", 1)
         if len(parts) == 1:
-            module, obj = module, "application"
+            module, obj = parts[0], "application"
         else:
             module, obj = parts[0], parts[1]
         try:

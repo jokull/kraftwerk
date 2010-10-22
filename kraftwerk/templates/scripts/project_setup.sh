@@ -17,7 +17,7 @@ EOF
 {% if new -%}
 mkdir -p $SITE_SERVICE/log/main
 cat > $SITE_SERVICE/run << "EOF"
-{% include 'scripts/gunicorn.sh' %}
+{% include 'scripts/run.sh' %}
 EOF
 {%- endif %}
 

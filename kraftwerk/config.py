@@ -124,6 +124,9 @@ class Config(dict):
             for path in self['templates']:
                 templates = os.path.expanduser(path)
                 loaders.insert(-1, jinja2.FileSystemLoader(templates))
+        project_template_dir = os.path.join(os.getcwd(), 'templates')
+        if os.path.exists(project_template_dir):
+            loaders.insert(-1, jinja2.FileSystemLoader(project_template_dir))
         return jinja2.Environment(loader=jinja2.ChoiceLoader(loaders))
     
     @classmethod

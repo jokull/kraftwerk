@@ -167,7 +167,7 @@ def create_node(config, args):
     
     image_id = getattr(args, 'image-id', config["image_id"])
     for i in config.driver.list_images():
-        if i.id == image_id:
+        if str(i.id) == image_id:
             image = i
             break
     else:
@@ -175,40 +175,37 @@ def create_node(config, args):
             
     size_id = getattr(args, 'size-id', config["size_id"])
     for s in config.driver.list_sizes():
-        if s.id == size_id:
+        if str(s.id) == size_id:
             size = s
             break
     else:
         sys.exit("Size %s not found for this provider. Aborting." % size_id)
     
-    location_id = getattr(args, 'location-id', config.get("location_id", 0))
+    location_id = getattr(args, 'location-id', config.get("location_id", "0"))
     for l in config.driver.list_locations():
-        if l.id == location_id:
+        if str(l.id) == location_id:
             location = l
             break
     else:
         sys.exit("Location %s not found for this provider. Aborting." % location_id)
     
     if isinstance(config.driver, ec2.EC2NodeDriver):
-        extra = dict(userdata="""#!/bin/bash
+        extra = dict(ex_userdata="""#!/bin/bash
 echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         if not "keyname" in config:
             config["keyname"] = raw_input("EC2 Key Pair [default=\"default\"]: ") or "default"
-        extra.update(keyname=config["keyname"])
+        extra.update(ex_keyname=config["keyname"])
         if 'securitygroup' in config:
-            extra.update(securitygroup=config["securitygroup"])
+            extra.update(ex_securitygroup=config["securitygroup"])
     elif isinstance(config.driver, rackspace.RackspaceNodeDriver):
-        extra = dict(files={'/root/.ssh/authorized_keys': pubkey})
+        extra = dict(ex_files={'/root/.ssh/authorized_keys': pubkey})
     elif isinstance(config.driver, linode.LinodeNodeDriver):
         from libcloud.base import NodeAuthSSHKey
         extra = dict(auth=NodeAuthSSHKey(pubkey))
     
     create_info = dict(name=args.hostname, location=location,
         image=image, size=size, **extra)
-    try:
-        node = config.driver.create_node(**create_info)
-    except Exception, e:
-        raise Exception, "libcloud error: %s" % e
+    node = config.driver.create_node(**create_info)
     public_ip = node.public_ip[0]
     
     # Poll the node until it has a public ip
@@ -243,8 +240,6 @@ def setup_node(config, args):
     if args.templates:
         config['templates'].insert(0, args.templates)
         config.templates = config._templates()
-    print config.template("scripts/node_setup.sh")
-    return
     stdin, stderr = args.node.ssh(config.template("scripts/node_setup.sh"))
     if stderr:
         print stderr
