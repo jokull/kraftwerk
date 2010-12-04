@@ -48,7 +48,7 @@ class ProjectAction(argparse.Action):
             sys.exit("kraftwerk.yaml is missing or project path is " \
                      "not a kraftwerk project directory. \n")
         try:
-            proj.is_valid()
+            proj.clean()
         except ConfigError, e:
             print "Project config did not validate: %s" % e
             sys.exit()
@@ -287,7 +287,7 @@ def deploy(config, args):
         for service in args.project.services():
             args.node.ssh(service.setup_script)
             
-    print u"%s live at %r" % (args.project.config["domain"], args.node.hostname)
+    print u"%s live at %r" % (args.project.canonical_domain(), args.node.hostname)
     
 deploy.parser.add_argument('node', action=NodeAction, nargs='?',
     help="Server node to interact with.")

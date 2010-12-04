@@ -1,9 +1,15 @@
 #!/bin/sh
 
 {% include "scripts/env.sh" %}
-export PYTHONPATH=$ROOT
+export UWSGI_SOCKET=/tmp/uwsgi.{{ project }}.sock
+export UWSGI_MODULE={{ project.config.module }}
+export UWSGI_CALLABLE={{ project.config.callable }}
+export UWSGI_MASTER=1
+export UWSGI_PROCESSES={{ project.config.workers }}
+export UWSGI_MEMORY_REPORT=1
+export UWSGI_HARAKIRI=30
+
+export PYTHONPATH=$VIRTUALENV_SITEPACKAGES
 
 exec 2>&1
-exec $ROOT/bin/gunicorn -b unix:/tmp/gunicorn.{{ project }}.sock \
-    --workers {{ project.config.workers }} --name {{ project }} \
-    -u web -g web {{ project.config.wsgi }}
+exec uwsgi -C --uid web --gid web

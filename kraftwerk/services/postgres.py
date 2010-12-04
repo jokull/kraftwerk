@@ -11,7 +11,7 @@ class Service(BaseService):
             'POSTGRES_DATABASE': self.project.name}
     
     def _dump_path(self, path):
-        return join(path, 'sql.tar.gz')
+        return join(path, 'postgresql.db.out')
     
     def dump(self, node, path):
         return node.ssh('pg_dump --username=%s --file=%s -F c %s' % (

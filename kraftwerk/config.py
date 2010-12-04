@@ -120,13 +120,13 @@ class Config(dict):
         loaders = [jinja2.FileSystemLoader(templates_root)]
         # Prepend additional directories
         # We can call this method again after appending 
+        project_template_dir = os.path.join(os.getcwd(), 'templates')
+        if os.path.exists(project_template_dir):
+            loaders.insert(0, jinja2.FileSystemLoader(project_template_dir))
         if "templates" in self:
             for path in self['templates']:
                 templates = os.path.expanduser(path)
-                loaders.insert(-1, jinja2.FileSystemLoader(templates))
-        project_template_dir = os.path.join(os.getcwd(), 'templates')
-        if os.path.exists(project_template_dir):
-            loaders.insert(-1, jinja2.FileSystemLoader(project_template_dir))
+                loaders.insert(0, jinja2.FileSystemLoader(templates))
         return jinja2.Environment(loader=jinja2.ChoiceLoader(loaders))
     
     @classmethod

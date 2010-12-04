@@ -112,16 +112,23 @@ class Project(object):
         for service in self.services():
             for key, value in service.env.items():
                 yield key, value
+        if 'environ' in self.config:
+            for key, value in self.config['environ'].iteritems():
+                yield key, value
     
-    def _test_app_import(self):
-        from site import addsitedir
-        addsitedir(self.path)
-        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
+    def get_split_app_path(self):
         parts = self.config['wsgi'].rsplit(":", 1)
         if len(parts) == 1:
             module, obj = parts[0], "application"
         else:
             module, obj = parts[0], parts[1]
+        return module, obj
+    
+    def _test_app_import(self):
+        from site import addsitedir
+        addsitedir(self.path)
+        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
+        module, obj = self.get_split_app_path()
         try:
             __import__(module)
             mod = sys.modules[module]
@@ -132,16 +139,20 @@ class Project(object):
             raise ImportError("Failed to find application object: %r" % obj)
         if not callable(app):
             raise TypeError("Application object must be callable.")
-        
-    def is_valid(self):
+    
+    def clean(self):
         """A best-try attempt at exposing bad config early. Try 
         importing WSGI script, verify some types, required attributes
         etc. """
-        if not 'wsgi' in self.config:
-            raise ConfigError, "You must specify the WSGI app callable (project_name.server:application)."
+        try:
+            assert 'domain' in self.config, "You must specify at least one domain for the nginx configuration."
+            assert 'wsgi' in self.config, "You must specify the WSGI app callable (project_name.server:application)."
+            assert 'workers' in self.config, "You must specify the number of workers for the WSGI server."
+        except AssertionError, e:
+            raise ConfigError, unicode(e)
         self._test_app_import()
-        if not 'workers' in self.config:
-            raise ConfigError, "You must specify the number of workers for the WSGI server."
+        if ' ' in self.config['domain']:
+            raise ConfigError, "Domain must be a string or a list of strings"
         try:
             int(self.config['workers'])
         except ValueError:
@@ -150,10 +161,11 @@ class Project(object):
             file(os.path.join(self.src_path, 'REQUIREMENTS'))
         except IOError:
             raise ConfigError, "REQUIREMENTS file not found - must be under source directory"
+        self.config['module'], \
+        self.config['callable'] = self.get_split_app_path()
         return True
 
     def rsync(self, dest):
-        print dest
         exclude = os.path.join(self.path, "rsync_exclude.txt")
         cmd = ['rsync',
                '--recursive',
@@ -171,3 +183,9 @@ class Project(object):
             cmd.insert(1, '--exclude-from=%s' % exclude)
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
         return proc.communicate()
+    
+    def canonical_domain(self):
+        if isinstance(self.config['domain'], basestring):
+            return self.config['domain']
+        else:
+            return self.config['domain'][0]

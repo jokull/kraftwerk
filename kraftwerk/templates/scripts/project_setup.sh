@@ -1,11 +1,12 @@
-export PROJECT="{{ project.name }}"
-export ROOT="/web/$PROJECT"
-export SITE_SERVICE="/var/service/$PROJECT"
-export REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
+PROJECT="{{ project.name }}"
+ROOT="/web/$PROJECT"
+SITE_SERVICE="/var/service/$PROJECT"
+VIRTUALENV_SITEPACKAGES="$ROOT/lib/`ls -1 $ROOT/lib`/site-packages"
+REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
 
 {% if new -%}
 su - web -c "virtualenv $ROOT"
-su - web -c "$ROOT/bin/pip install -U gunicorn"
+su - web -c "echo $ROOT > $VIRTUALENV_SITEPACKAGES/$PROJECT.pth"
 {%- endif %}
 
 su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
