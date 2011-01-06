@@ -261,8 +261,9 @@ def deploy(config, args):
     time setup and runs service setup."""
     log = logging.getLogger('kraftwerk.deploy')
     
+    # TODO better way to detect new, or maybe move to dedicated command
     stdout, stderr = args.node.ssh('stat /var/service/%s' % args.project.name, pipe=True)
-    new = bool(stderr)
+    new = bool(stderr) or args.override
     
     # Sync codebase over with the web user
     destination = 'web@%s:/web/%s/' % (args.node.hostname, args.project.name)
@@ -270,9 +271,6 @@ def deploy(config, args):
     if stderr:
         log.error("Sync error: %s" % stderr)
         sys.exit(stderr)
-        
-    if args.sync_only:
-        return
     
     # Put together the setup script
     cmd = config.template("scripts/project_setup.sh", 
@@ -305,9 +303,9 @@ deploy.parser.add_argument('--upgrade-packages',
     default=False, action='store_true',
     help="Upgrade Python packages (adds -U to pip install)")
          
-deploy.parser.add_argument('--sync-only',
+deploy.parser.add_argument('--override',
     default=False, action='store_true',
-    help="Only sync files across and exit. Quicker if you don't need to reload Python code.")
+    help="Create folders and config as if deploying for the first time.")
 
 
 @command
