@@ -1,5 +1,6 @@
 argparse
 PyYAML
 Jinja2
--e git+git://git.apache.org/libcloud.git#egg=libcloud
+# -e git+git://git.apache.org/libcloud.git#egg=libcloud
+apache-libcloud
 virtualenv

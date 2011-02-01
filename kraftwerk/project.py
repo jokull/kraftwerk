@@ -134,7 +134,8 @@ class Project(object):
             mod = sys.modules[module]
             app = eval(obj, mod.__dict__)
         except Exception, e:
-            raise ConfigError, 'Module %r could not be imported (Error: "%s")' % (module, e)
+            import traceback
+            raise ConfigError, 'Module %r could not be imported\n\n%s' % (module, traceback.format_exc())
         if app is None:
             raise ImportError("Failed to find application object: %r" % obj)
         if not callable(app):

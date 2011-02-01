@@ -12,4 +12,4 @@ export UWSGI_HARAKIRI=30
 export PYTHONPATH=$VIRTUALENV_SITEPACKAGES
 
 exec 2>&1
-exec uwsgi -C --uid web --gid web
+exec uwsgi -C --uid web --gid web -H $SITE_ROOT
