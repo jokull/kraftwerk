@@ -10,6 +10,7 @@ import jinja2
 from libcloud.types import Provider
 from libcloud.base import ConnectionUserAndKey, ConnectionKey
 from libcloud.providers import get_driver as libcloud_get_driver
+from libcloud.drivers import ec2, rackspace, linode
 
 from kraftwerk import templates_root
 from kraftwerk.exc import ConfigError
@@ -109,6 +110,11 @@ class Config(dict):
         credentials = [self['user']]
         if issubclass(DriverClass.connectionCls, ConnectionUserAndKey):
             credentials.append(self['secret'])
+        if issubclass(DriverClass, ec2.EC2NodeDriver):
+            # Respect AWS environment variables
+            user_key, secret_key = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+            if all (k in os.environ for k in (user_key, secret_key)):
+                credentials = os.environ[user_key], os.environ[secret_key]
         try:
             driver = DriverClass(*credentials)
         except TypeError, e:
