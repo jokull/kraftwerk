@@ -151,11 +151,13 @@ init.parser.add_argument('title', default=None,
 def create_node(config, args):
     """Commissions a new server node."""
     log = logging.getLogger('kraftwerk.create-node')
-    
-    pubkey_paths = [os.path.join(os.environ['HOME'], '.ssh', f) for f \
-        in ['id_rsa.pub', 'id_dsa.pub']]
+
     if 'pubkey' in config:
-        pubkey_paths.append(config["pubkey"])
+        pubkey_paths = [config["pubkey"]]
+    else:
+        pubkey_paths = [os.path.join(os.environ['HOME'], '.ssh', f) for f \
+            in ['id_rsa.pub', 'id_dsa.pub']]
+
     for path in pubkey_paths:
         if os.path.exists(path):
             print 'SSH public key: %s' % path
