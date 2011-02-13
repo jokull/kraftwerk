@@ -174,7 +174,7 @@ def create_node(config, args):
     
     # Query driver for size, image, and location
     
-    image_id = getattr(args, 'image-id', config["image_id"])
+    image_id = str(getattr(args, 'image-id', config["image_id"]))
     for i in config.driver.list_images():
         if str(i.id) == image_id:
             image = i
@@ -182,7 +182,7 @@ def create_node(config, args):
     else:
         sys.exit("Image %s not found for this provider. Aborting." % image_id)
             
-    size_id = getattr(args, 'size-id', config["size_id"])
+    size_id = str(getattr(args, 'size-id', config["size_id"]))
     for s in config.driver.list_sizes():
         if str(s.id) == size_id:
             size = s
@@ -190,7 +190,7 @@ def create_node(config, args):
     else:
         sys.exit("Size %s not found for this provider. Aborting." % size_id)
     
-    location_id = getattr(args, 'location-id', config.get("location_id", "0"))
+    location_id = str(getattr(args, 'location-id', config.get("location_id", "0")))
     for l in config.driver.list_locations():
         if str(l.id) == location_id:
             location = l
