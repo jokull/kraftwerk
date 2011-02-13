@@ -10,6 +10,13 @@ import virtualenv
 from libcloud.drivers import ec2, rackspace, linode
 # Add as you test support for more providers
 
+# http://wiki.apache.org/incubator/LibcloudSSL
+CA_CERTS_PATH = '/etc/ssl/certs/' # Debian ca-certificates package CA_CERTS path
+if os.path.exists(CA_CERTS_PATH):
+    import libcloud.security
+    libcloud.security.VERIFY_SSL_CERT = True
+    libcloud.security.CA_CERTS_PATH.append(CA_CERTS_PATH)
+
 import kraftwerk
 from kraftwerk.project import Project
 from kraftwerk.node import Node
