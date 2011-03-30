@@ -179,11 +179,5 @@ def flatten(dictionary, prefix=''):
         if not isinstance(value, dict):
             dictionary[prefix + key] = value
         else:
-            for key2 in value.keys():
-                value2 = value.pop(key2)
-                if not isinstance(value2, dict):
-                    dictionary[prefix + key + '.' + key2] = value2
-                else:
-                    dictionary.update(flatten(value2,
-                        prefix=(prefix + key + '.' + key2 + '.')))
+            dictionary.update(flatten(value, prefix=(prefix + key + '.')))
     return dictionary
