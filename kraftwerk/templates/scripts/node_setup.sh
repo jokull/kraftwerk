@@ -11,7 +11,7 @@ apt-get -y -qq install curl git-core mercurial nginx postgresql rsync runit subv
 apt-get -y -qq install build-essential libxml2-dev libevent-dev ncurses-dev python-dev python-imaging python-lxml python-numpy python-psycopg2 python-setuptools
 
 easy_install virtualenv pip gevent setproctitle uwsgi
-pip install http://projects.unbit.it/downloads/uwsgi-0.9.6.8.tar.gz
+pip install http://projects.unbit.it/downloads/uwsgi-0.9.8.tar.gz
 mkdir -p /var/service
 
 PG_HBA="/etc/postgresql/8.4/main/pg_hba.conf"
