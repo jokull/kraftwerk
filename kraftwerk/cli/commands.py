@@ -286,7 +286,7 @@ def deploy(config, args):
         project=args.project, new=new, 
         upgrade_packages=args.upgrade_packages)
     stdout, stderr = args.node.ssh(cmd, pipe=True)
-    if bool(stderr):
+    if stderr:
         print stderr
     
     # TODO detect new services
