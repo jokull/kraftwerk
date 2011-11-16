@@ -7,7 +7,7 @@ locale-gen is_IS.UTF-8
 
 apt-get -q update
 apt-get -y -qq upgrade
-apt-get -y -qq install curl git-core mercurial nginx postgresql rsync runit unzip wget zip nginx htop
+apt-get -y -qq install curl git-core mercurial nginx postgresql rsync runit unzip wget zip nginx htop redis-server
 apt-get -y -qq install build-essential libxml2-dev libevent-dev ncurses-dev python-dev python-imaging python-lxml python-numpy python-psycopg2 python-setuptools
 
 easy_install virtualenv pip uwsgi
