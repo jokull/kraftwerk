@@ -1,7 +1,9 @@
 PROJECT="{{ project.name }}"
 ROOT="/web/$PROJECT"
 SITE_SERVICE="/var/service/$PROJECT"
-VIRTUALENV_SITEPACKAGES="$ROOT/lib/`ls -1 $ROOT/lib`/site-packages"
+PYTHON_VERSION=$(python -c 'import sys; print ".".join(map(str, sys.version_info)[:2])')
+
+VIRTUALENV_SITEPACKAGES="$ROOT/lib/python$PYTHON_VERSION/site-packages"
 REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
 
 {% if new -%}
