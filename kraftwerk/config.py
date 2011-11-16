@@ -12,6 +12,9 @@ from libcloud.base import ConnectionUserAndKey, ConnectionKey
 from libcloud.providers import get_driver as libcloud_get_driver
 from libcloud.drivers import ec2, rackspace, linode
 
+import libcloud.security
+libcloud.security.VERIFY_SSL_CERT = False
+
 from kraftwerk import templates_root
 from kraftwerk.exc import ConfigError
 from kraftwerk.compat import relpath
