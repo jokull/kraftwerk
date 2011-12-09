@@ -215,14 +215,14 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
     create_info = dict(name=args.hostname, location=location,
         image=image, size=size, **extra)
     node = config.driver.create_node(**create_info)
-    public_ip = node.public_ip[0]
+    public_ip = node.public_ip
     
     # Poll the node until it has a public ip
     while not public_ip:
         time.sleep(3)
-        nodes = filter(lambda n: node.id == n.id, config.driver.list_nodes())
-        if nodes:
-            public_ip = nodes[0].public_ip[0]
+        for node_ in config.driver.list_nodes():
+            if node.id == node_.id and node_.public_ip:
+                public_ip = node_.public_ip[0]
     
     # At least EC2 passes only back hostname
     if not IP_RE.match(public_ip):
