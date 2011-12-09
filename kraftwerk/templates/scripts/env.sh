@@ -1,8 +1,9 @@
 ROOT=/web/{{ project.name }}
 export PATH="$ROOT/bin:$PATH"
-VIRTUALENV_SITEPACKAGES="$ROOT/lib/`ls -1 $ROOT/lib`/site-packages"
-# Trick to get python site-packages folder regardless of version
-# TODO this fails
+
+PYTHON_VERSION=$(python -c 'import sys; print ".".join(map(str, sys.version_info)[:2])')
+VIRTUALENV_SITEPACKAGES="$ROOT/lib/python$PYTHON_VERSION/site-packages"
+
 {% for key, val in project.environment() -%}
 export {{ key }}="{{ val }}"
 {% endfor -%}
