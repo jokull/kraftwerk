@@ -191,12 +191,15 @@ def create_node(config, args):
         sys.exit("Size %s not found for this provider. Aborting." % size_id)
     
     location_id = str(getattr(args, 'location-id', config.get("location_id", "0")))
-    for l in config.driver.list_locations():
-        if str(l.id) == location_id:
-            location = l
-            break
+    if location_id != 'None':
+        for l in config.driver.list_locations():
+            if str(l.id) == location_id:
+                location = l
+                break
+        else:
+            sys.exit("Location %s not found for this provider. Aborting." % location_id)
     else:
-        sys.exit("Location %s not found for this provider. Aborting." % location_id)
+        location = None
     
     if isinstance(config.driver, ec2.EC2NodeDriver):
         extra = dict(ex_userdata="""#!/bin/bash
@@ -223,7 +226,10 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
         for node_ in config.driver.list_nodes():
             if node.id == node_.id and node_.public_ip:
                 public_ip = node_.public_ip[0]
-    
+
+    if type(public_ip) == list:
+        public_ip = public_ip[0]
+
     # At least EC2 passes only back hostname
     if not IP_RE.match(public_ip):
         from socket import gethostbyname
