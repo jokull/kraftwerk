@@ -7,7 +7,7 @@ from random import choice
 from functools import wraps
 import argparse
 import virtualenv
-from libcloud.drivers import ec2, rackspace, linode
+from libcloud.compute.drivers import ec2, rackspace, linode
 # Add as you test support for more providers
 
 # http://wiki.apache.org/incubator/LibcloudSSL
