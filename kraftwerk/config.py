@@ -7,10 +7,10 @@ import yaml
 import os
 import jinja2
 
-from libcloud.types import Provider
-from libcloud.base import ConnectionUserAndKey, ConnectionKey
-from libcloud.providers import get_driver as libcloud_get_driver
-from libcloud.drivers import ec2, rackspace, linode
+from libcloud.compute.types import Provider
+from libcloud.compute.base import ConnectionUserAndKey, ConnectionKey
+from libcloud.compute.providers import get_driver as libcloud_get_driver
+from libcloud.compute.drivers import ec2, rackspace, linode
 
 import libcloud.security
 libcloud.security.VERIFY_SSL_CERT = False
