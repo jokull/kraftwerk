@@ -3,7 +3,7 @@ adduser --disabled-password --gecos=none web
 mkdir -p /web && cp -R /root/.ssh /home/web/.
 chown -R web:web /web /home/web
 
-locale-gen is_IS.UTF-8
+locale-gen en_US.UTF-8
 
 apt-get -q update
 apt-get -y -qq upgrade
@@ -24,4 +24,5 @@ EOF
 /etc/init.d/nginx start
 /etc/init.d/postgresql restart
 chmod 777 /tmp
+
 {% include 'scripts/post_node_setup.sh' %}
