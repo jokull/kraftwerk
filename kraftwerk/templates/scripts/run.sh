@@ -1,5 +1,8 @@
 #!/bin/sh
 
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+
 {% include "scripts/env.sh" %}
 export UWSGI_SOCKET=/tmp/uwsgi.{{ project }}.sock
 export UWSGI_MODULE={{ project.config.module }}
