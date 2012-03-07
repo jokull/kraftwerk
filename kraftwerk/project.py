@@ -91,7 +91,7 @@ class Project(object):
         if proc.returncode != 0:
             sys.exit("To use this feature you must be running ssh-agent" + \
                      " with your relevant key added (%s)." % stdout)
-        rsync_cmd = "rsync -e \"ssh -o StrictHostKeyChecking=no\" --recursive --times --archive --compress --delete %s %s" % (rsync_src, rsync_dest)
+        rsync_cmd = "rsync -e \"ssh -o StrictHostKeyChecking=no\" --recursive –-copy-dirlinks --times --archive --compress --delete %s %s" % (rsync_src, rsync_dest)
         stdout, stderr = src_node.ssh(rsync_cmd, user="web", pipe=True)
         if stderr:
             sys.exit("rsync error: %s" % stderr)

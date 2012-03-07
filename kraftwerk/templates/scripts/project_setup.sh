@@ -8,7 +8,7 @@ REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
 
 {% if new -%}
 
-su - web -c "virtualenv $ROOT"
+su - web -c "virtualenv --system-site-packages $ROOT"
 su - web -c "echo $ROOT > $VIRTUALENV_SITEPACKAGES/$PROJECT.pth"
 
 cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"

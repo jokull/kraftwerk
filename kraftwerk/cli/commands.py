@@ -181,15 +181,15 @@ def create_node(config, args):
             break
     else:
         sys.exit("Image %s not found for this provider. Aborting." % image_id)
-            
-    size_id = str(getattr(args, 'size-id', config["size_id"]))
+
+    size_id = str(getattr(args, 'size_id', config["size_id"]))
     for s in config.driver.list_sizes():
         if str(s.id) == size_id:
             size = s
             break
     else:
         sys.exit("Size %s not found for this provider. Aborting." % size_id)
-    
+        
     location_id = str(getattr(args, 'location-id', config.get("location_id", "0")))
     if location_id != 'None':
         for l in config.driver.list_locations():
