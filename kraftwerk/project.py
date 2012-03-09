@@ -43,6 +43,7 @@ class Project(object):
         self._services = None
         with file(os.path.join(self.path, 'kraftwerk.yaml')) as fp:
             self.config = yaml.load(fp.read())
+            self.name = self.config.get('package', self.name)
         self.src_path = os.path.join(self.path, self.src())
     
     def __unicode__(self):
