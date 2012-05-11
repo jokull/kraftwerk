@@ -4,7 +4,7 @@ SITE_SERVICE="/var/service/$PROJECT"
 PYTHON_VERSION=$(python -c 'import sys; print ".".join(map(str, sys.version_info)[:2])')
 
 VIRTUALENV_SITEPACKAGES="$ROOT/lib/python$PYTHON_VERSION/site-packages"
-REQUIREMENTS="$ROOT/{{ project.src() }}/REQUIREMENTS"
+requirements.txt="$ROOT/{{ project.src() }}/requirements.txt"
 
 {% if new -%}
 
@@ -31,7 +31,7 @@ ln -s $SITE_SERVICE /etc/service/$PROJECT
 
 {%- endif %}
 
-su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
+su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $requirements.txt"
 sv restart /etc/service/$PROJECT
 
 /etc/init.d/nginx reload

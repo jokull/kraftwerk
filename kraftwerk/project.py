@@ -161,9 +161,9 @@ class Project(object):
         except ValueError:
             raise ConfigError, "`workers` value must be a number"
         try:
-            file(os.path.join(self.src_path, 'REQUIREMENTS'))
+            file(os.path.join(self.src_path, 'requirements.txt'))
         except IOError:
-            raise ConfigError, "REQUIREMENTS file not found - must be under source directory"
+            raise ConfigError, "requirements.txt file not found - must be under source directory"
         self.config['module'], \
         self.config['callable'] = self.get_split_app_path()
         return True
