@@ -161,7 +161,7 @@ class Project(object):
         except ValueError:
             raise ConfigError, "`workers` value must be a number"
         try:
-            file(os.path.join(self.src_path, 'requirements.txt'))
+            file(os.path.join(self.path, 'requirements.txt'))
         except IOError:
             raise ConfigError, "requirements.txt file not found - must be under source directory"
         self.config['module'], \

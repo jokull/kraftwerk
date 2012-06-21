@@ -3,12 +3,12 @@ ROOT="/web/$PROJECT"
 SITE_SERVICE="/var/service/$PROJECT"
 PYTHON_VERSION=$(python -c 'import sys; print ".".join(map(str, sys.version_info)[:2])')
 
-VIRTUALENV_SITEPACKAGES="$ROOT/lib/python$PYTHON_VERSION/site-packages"
-REQUIREMENTS="$ROOT/{{ project.src() }}/requirements.txt"
+VIRTUALENV_SITEPACKAGES="$ROOT/venv/lib/python$PYTHON_VERSION/site-packages"
+REQUIREMENTS="$ROOT/{{ project.path }}/requirements.txt"
 
 {% if new -%}
 
-su - web -c "virtualenv --system-site-packages $ROOT"
+su - web -c "virtualenv --distribute --system-site-packages $ROOT/venv"
 su - web -c "echo $ROOT > $VIRTUALENV_SITEPACKAGES/$PROJECT.pth"
 
 cat > /etc/nginx/sites-enabled/$PROJECT << "EOF"
@@ -31,7 +31,7 @@ ln -s $SITE_SERVICE /etc/service/$PROJECT
 
 {%- endif %}
 
-su - web -c "$ROOT/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
+su - web -c "$ROOT/venv/bin/pip install{% if upgrade_packages %} -U{% endif %} -r $REQUIREMENTS"
 sv restart /etc/service/$PROJECT
 
 /etc/init.d/nginx reload
