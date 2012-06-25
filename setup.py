@@ -21,7 +21,7 @@ def find_package_data():
                 files.append(relpath(abs_path, start=src_root))
     return files
 
-with open(abspath(join(dirname(__file__), 'REQUIREMENTS')), 'r') as fp:
+with open(abspath(join(dirname(__file__), 'requirements.txt')), 'r') as fp:
     # Filter pip-y packages - libcloud has to be installed from git
     requirements = [l.strip() for l in fp if re.match(r'^[\w_-]+$', l.strip())]
 
@@ -30,7 +30,7 @@ setup(
     version          = __version__,
     author           = "Jokull Solberg Audunsson", # Jökull Sólberg Auðunsson
     author_email     = "jokull@solberg.is",
-    description      = "A WSGI deployment tool.",
+    description      = "A WSGI deployment CLI",
     license          = "BSD",
     url              = "http://www.kraftwerk-wsgi.com/",
     zip_safe         = False,

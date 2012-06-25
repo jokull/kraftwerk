@@ -1,8 +1,0 @@
-domain: www.{{ project_title }}.com
-aliases:
-    - {{ project_title }}.com
-services:
-    - postgres
-    - files
-workers: 1
-wsgi: '{{ project_title }}.wsgi:application'

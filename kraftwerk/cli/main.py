@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import logging
-import os, shutil
+import os
 import argparse
 
 from kraftwerk import templates

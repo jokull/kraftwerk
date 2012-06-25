@@ -2,76 +2,24 @@
 
 from __future__ import with_statement
 
-import codecs, logging, os, pprint, sys, re, time, subprocess
+import logging
+import os
+import pprint
+import sys
+import re
+import time
+
 from random import choice
-from functools import wraps
-import argparse
-import virtualenv
+from socket import gethostbyname
+
 from libcloud.compute.drivers import ec2, rackspace, linode
-# Add as you test support for more providers
 
-# http://wiki.apache.org/incubator/LibcloudSSL
-CA_CERTS_PATH = '/etc/ssl/certs/' # Debian ca-certificates package CA_CERTS path
-if os.path.exists(CA_CERTS_PATH):
-    import libcloud.security
-    libcloud.security.VERIFY_SSL_CERT = True
-    libcloud.security.CA_CERTS_PATH.append(CA_CERTS_PATH)
+from .. import etchosts
 
-import kraftwerk
-from kraftwerk.project import Project
-from kraftwerk.node import Node
-from kraftwerk.exc import ConfigError
-from kraftwerk.config import Config, path as config_path
-from kraftwerk.cli.parser import subparsers
-from kraftwerk.cli.utils import confirm
-from kraftwerk.compat import relpath
-from kraftwerk import etchosts
-from kraftwerk import services
+from .utils import confirm
+from . import command, NodeAction, ProjectAction
 
 IP_RE = re.compile(r'(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})')
-
-def command(function):
-    """Decorator/wrapper to declare a function as a kraftwerk CLI task."""
-    
-    cmd_name = function.__name__.replace('_', '-')
-    help = (function.__doc__ or '').rstrip('.') or None
-    parser = subparsers.add_parser(cmd_name, help=help)
-    
-    @wraps(function)
-    def wrapper(config, args):
-        logging.getLogger('kraftwerk').debug('Running kraftwerk.%s' % cmd_name)
-        return function(config, args)
-    wrapper.parser = parser
-    
-    return wrapper
-
-class ProjectAction(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string=None):
-        if value is None:
-            value = os.getcwd()
-        try:
-            proj = Project(os.path.abspath(value))
-        except IOError:
-            sys.exit("kraftwerk.yaml is missing or project path is " \
-                     "not a kraftwerk project directory. \n")
-        try:
-            proj.clean()
-        except ConfigError, e:
-            print "Project config did not validate: %s" % e
-            sys.exit()
-        setattr(namespace, self.dest, proj)
-
-class NodeAction(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string=None):
-        if value is None:
-            config = Config.for_file(namespace.config)
-            if "default_node" in config:
-                value = config["default_node"]
-                print "Using default_node (%s)" % value
-        if value:
-            setattr(namespace, self.dest, Node(value))
-        else:
-            sys.exit("You must specify a 'node' value")
             
 
 ## Utilities
@@ -81,77 +29,12 @@ def show_config(config, args):
     """Pretty-print the current kraftwerk configuration."""
     pprint.pprint(config)
 
-def _copy_project(config, title, project_root):
-    """`init` helper to push the project skeleton through templates 
-    and copy over."""
-    
-    secret = ''.join([choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)])
-    start = os.path.join(kraftwerk.templates_root, 'project')
-    
-    for dirpath, dirnames, filenames in os.walk(start):
-        # Copy template skeleton
-        for name in dirnames + filenames:
-            
-            path = os.path.join(dirpath, name)
-            rel = relpath(path, start)
-            
-            project_rel = rel
-            if "project" in rel:
-                project_rel = rel.replace("project", title)
-
-            dest_path = os.path.join(project_root, project_rel)
-
-            if not os.path.exists(dest_path):
-                if os.path.isdir(path):
-                    os.makedirs(dest_path)
-                else:
-                    with codecs.open(dest_path, 'w', encoding='utf-8') as fp:
-                        tpl = config.templates.get_template(os.path.join('project', rel))
-                        fp.write(tpl.render({'project_title': title, 'secret': secret}))
-
-@command
-def init(config, args):
-    """Create a new WSGI project skeleton and config."""
-    
-    log = logging.getLogger('kraftwerk.init')
-    
-    # project_root/src_root
-    project_root = os.path.abspath(os.path.join(os.getcwd(), args.title))
-    src_root = os.path.join(project_root, args.title)
-    
-    if os.path.exists(project_root) and os.listdir(project_root):
-        init.parser.error("Directory exists and isn't empty")
-    elif not os.path.exists(project_root):
-        log.debug('makedirs %s' % project_root)
-        os.makedirs(project_root)
-    elif not os.path.isdir(project_root):
-        init.parser.error("A file with this name already exists here and isn't a directory")
-    
-    log.debug('virtualenv %s/' % args.title)
-    logger = virtualenv.Logger([
-                 (virtualenv.Logger.level_for_integer(2), sys.stdout)])
-    virtualenv.logger = logger
-    virtualenv.create_environment(args.title, site_packages=True)
-    
-    log.debug('mkdir %s/service/' % project_root)
-    os.makedirs(os.path.join(args.title, 'service'))
-    log.debug('mkdir %s/static/' % project_root)
-    os.makedirs(os.path.join(args.title, 'static'))
-    log.debug('mkdir %s/' % src_root)
-    os.makedirs(src_root)
-    
-    _copy_project(config, args.title, project_root)
-    print "Your new project is at: %s" % project_root
-
-init.parser.add_argument('title', default=None,
-    help="Create kraftwerk project (if omitted, defaults to current directory)")
-
 
 @command
 def create_node(config, args):
     """Commissions a new server node."""
     log = logging.getLogger('kraftwerk.create-node')
-
+    
     if 'pubkey' in config:
         pubkey_paths = [config["pubkey"]]
     else:
@@ -173,16 +56,17 @@ def create_node(config, args):
             % args.hostname)
     
     # Query driver for size, image, and location
-    
-    image_id = str(getattr(args, 'image-id', config["image_id"]))
+    print args
+    print dir(args)
+    image_id = args.image_id or config['image_id']
     for i in config.driver.list_images():
         if str(i.id) == image_id:
             image = i
             break
     else:
         sys.exit("Image %s not found for this provider. Aborting." % image_id)
-
-    size_id = str(getattr(args, 'size_id', config["size_id"]))
+    
+    size_id = args.size_id or config['size_id']
     for s in config.driver.list_sizes():
         if str(s.id) == size_id:
             size = s
@@ -232,21 +116,19 @@ echo '%s' > /root/.ssh/authorized_keys""" % pubkey)
 
     # At least EC2 passes only back hostname
     if not IP_RE.match(public_ip):
-        from socket import gethostbyname
         public_ip = gethostbyname(public_ip)
 
     if confirm("Create /etc/hosts entry?"):
-        from kraftwerk.etchosts import set_etchosts
-        set_etchosts(args.hostname, public_ip)
+        etchosts.set_etchosts(args.hostname, public_ip)
     
     print u"Node %s (%s)" % (args.hostname, public_ip)
     print u"Run 'kraftwerk setup-node %s'" % args.hostname
     
 create_node.parser.add_argument('hostname', default=None,
     help="Hostname label for the node (optionally adds an entry to /etc/hosts for easy access)")
-create_node.parser.add_argument('--size-id',
+create_node.parser.add_argument('--size-id', 
     help="Provider node size. Defaults to user config.")
-create_node.parser.add_argument('--image-name', 
+create_node.parser.add_argument('--image-id', 
     help="Ubuntu image. Defaults to user config. (ex. EC2 AMI image id)")
 
 @command
@@ -286,6 +168,9 @@ def deploy(config, args):
     if stderr:
         log.error("Sync error: %s" % stderr)
         sys.exit(stderr)
+    
+    # Copy requirements
+    args.project.copy(args.node, 'requirements.txt')
     
     # Put together the setup script
     cmd = config.template("scripts/project_setup.sh", 
@@ -332,7 +217,7 @@ def destroy(config, args):
             (args.project.name, args.node.hostname)):
         args.node.ssh(config.template("scripts/project_destroy.sh", project=args.project))
         print "Project %s removed from node %s" % \
-            (args.project.name, args.node)
+            (args.project.name, args.node.hostname  )
         for service in args.project.services(args.node):
             args.node.ssh(service.destroy_script)
 
@@ -405,23 +290,6 @@ load.parser.add_argument('project', action=ProjectAction, nargs='?',
          
 load.parser.add_argument('--no-backup', default=False, action='store_true',
     help="Only sync files across and exit. Quicker if you don't need to reload Python code.")
-
-@command
-def sync_services(config, args):
-    """Snapshot service data and restore on another node. This is a 
-    destructive action. Kraftwerk does an additional dump before 
-    loading new data just in case."""
-    if confirm("WARNING: This isn't considered production ready just yet. Continue?"):
-        timestamp = args.project.sync_services(args.srcnode, args.destnode)
-    
-sync_services.parser.add_argument('srcnode', action=NodeAction, 
-    help="Server node to dump data from.")
-    
-sync_services.parser.add_argument('destnode', action=NodeAction, 
-    help="Server node to load data into.")
-
-sync_services.parser.add_argument('project', action=ProjectAction, nargs='?', 
-    help="Project root directory path. Defaults to current directory.")
 
 @command
 def env(config, args):

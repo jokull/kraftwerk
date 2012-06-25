@@ -3,7 +3,9 @@
 from __future__ import with_statement
 
 from datetime import datetime
-import os, subprocess, sys
+import os
+import subprocess
+import sys
 import yaml
 
 from kraftwerk.exc import ConfigError
@@ -75,29 +77,6 @@ class Project(object):
             except NotImplementedError:
                 pass # Report error here? Warning?
     
-    def sync_services(self, src_node, dest_node, timestamp=None):
-        """
-        Uses the dump/load plumbing to transfer project state between
-        two nodes. Does a backup dump first, then a dump+transfer on 
-        the 'source' node. Destructive. ssh-agent is required to do 
-        transfers between two nodes.
-        """
-        restore_timestamp = self.dump(dest_node) # backup
-        if timestamp is None:
-            timestamp = self.dump(src_node)
-        rsync_src = self.dump_path(timestamp)
-        rsync_dest = "root@%s:%s" % (dest_node.ip, rsync_src)
-        proc = subprocess.Popen(['ssh-add', '-l'], stdout=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        if proc.returncode != 0:
-            sys.exit("To use this feature you must be running ssh-agent" + \
-                     " with your relevant key added (%s)." % stdout)
-        rsync_cmd = "rsync -e \"ssh -o StrictHostKeyChecking=no\" --recursive –-copy-dirlinks --times --archive --compress --delete %s %s" % (rsync_src, rsync_dest)
-        stdout, stderr = src_node.ssh(rsync_cmd, user="web", pipe=True)
-        if stderr:
-            sys.exit("rsync error: %s" % stderr)
-        self.load(dest_node, timestamp)
-    
     @cached_list
     def services(self, strict=False):
         for service in self.config.get('services', []):
@@ -125,25 +104,7 @@ class Project(object):
             module, obj = parts[0], parts[1]
         return module, obj
     
-    def _test_app_import(self):
-        return True
-        from site import addsitedir
-        addsitedir(self.path)
-        addsitedir(os.path.join(self.path, 'lib/python2.6/site-packages'))
-        module, obj = self.get_split_app_path()
-        try:
-            __import__(module)
-            mod = sys.modules[module]
-            app = eval(obj, mod.__dict__)
-        except Exception, e:
-            import traceback
-            raise ConfigError, 'Module %r could not be imported\n\n%s' % (module, traceback.format_exc())
-        if app is None:
-            raise ImportError("Failed to find application object: %r" % obj)
-        if not callable(app):
-            raise TypeError("Application object must be callable.")
-    
-    def clean(self):
+    def validate(self):
         """A best-try attempt at exposing bad config early. Try 
         importing WSGI script, verify some types, required attributes
         etc. """
@@ -153,7 +114,7 @@ class Project(object):
             assert 'workers' in self.config, "You must specify the number of workers for the WSGI server."
         except AssertionError, e:
             raise ConfigError, unicode(e)
-        self._test_app_import()
+            
         if ' ' in self.config['domain']:
             raise ConfigError, "Domain must be a string or a list of strings"
         try:
@@ -186,6 +147,16 @@ class Project(object):
             cmd.insert(1, '--exclude-from=%s' % exclude)
         proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
         return proc.communicate()
+    
+    def copy(self, node, path):
+        if path.startswith('/') or not os.path.exists(path):
+            sys.exit(u"Non-secure path, must be non-absolute.")
+        dest = 'web@%s:/web/%s/%s' % (node.hostname, self.name, path)
+        proc = subprocess.Popen(['scp', '-q', path, dest])
+        stdout, stderr = proc.communicate()
+        if stderr:
+            sys.exit(stderr)
+        return
     
     def canonical_domain(self):
         if isinstance(self.config['domain'], basestring):

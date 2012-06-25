@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 def confirm(prompt=None, resp=False):
     """prompts for yes or no response from the user. Returns True for yes and
     False for no.

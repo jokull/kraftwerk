@@ -15,8 +15,9 @@ source /etc/default/locale
 
 apt-get -q update
 apt-get -y -qq upgrade
-apt-get -y -qq install curl git-core mercurial nginx postgresql rsync runit unzip wget zip nginx htop redis-server
-apt-get -y -qq install build-essential libxml2-dev libevent-dev ncurses-dev python-dev python-imaging python-lxml python-numpy python-psycopg2 python-setuptools
+apt-get -y -qq install curl wget git-core htop unzip zip rsync runit build-essential 
+apt-get -y -qq install nginx postgresql redis-server
+apt-get -y -qq install libxml2-dev libevent-dev ncurses-dev python-dev python-lxml python-numpy python-setuptools libmagickwand-dev postgresql-server-dev-all
 
 easy_install virtualenv pip uwsgi
 mkdir -p /var/service
@@ -32,6 +33,7 @@ EOF
 
 /usr/sbin/runsvdir-start &>/dev/null & # Background and quiet
 /etc/init.d/nginx start
+/etc/init.d/redis-server start
 /etc/init.d/postgresql restart
 chmod 777 /tmp
 

@@ -4,7 +4,7 @@ SITE_SERVICE="/var/service/$PROJECT"
 PYTHON_VERSION=$(python -c 'import sys; print ".".join(map(str, sys.version_info)[:2])')
 
 VIRTUALENV_SITEPACKAGES="$ROOT/venv/lib/python$PYTHON_VERSION/site-packages"
-REQUIREMENTS="$ROOT/{{ project.path }}/requirements.txt"
+REQUIREMENTS="$ROOT/requirements.txt"
 
 {% if new -%}
 
