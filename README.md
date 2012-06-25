@@ -11,7 +11,7 @@ Kraftwerk is VCS agnostic. It uses rsync to transfer code.
 Install
 =======
 
-    $ pip install git://github.com/jokull/kraftwerk.git@0.1
+    $ pip install kraftwerk
 
 If you want to hack on Kraftwerk, fork on [GitHub](https://github.com/jokull/kraftwerk):
 
