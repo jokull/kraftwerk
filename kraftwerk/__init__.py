@@ -2,13 +2,18 @@
 
 import os
 import logging
-import jinja2
 
 
 __version__ = '0.1'
 
 templates_root = os.path.join(os.path.dirname(__file__), 'templates')
-templates = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_root))
+templates = None
+
+try:
+    import jinja2
+    templates = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_root))
+except ImportError:
+    pass
 
 default_formatter = logging.Formatter(
     u'%(name)s: %(levelname)s: %(message)s')
