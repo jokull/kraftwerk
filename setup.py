@@ -2,7 +2,7 @@
 
 from __future__ import with_statement
 
-import os, re
+import os, re, sys
 
 from os.path import join, dirname, abspath, curdir
 from setuptools import setup, find_packages
@@ -21,9 +21,16 @@ def find_package_data():
                 files.append(relpath(abs_path, start=src_root))
     return files
 
-with open(abspath(join(dirname(__file__), 'requirements.txt')), 'r') as fp:
-    # Filter pip-y packages - libcloud has to be installed from git
-    requirements = [l.strip() for l in fp if re.match(r'^[\w_-]+$', l.strip())]
+requires = [
+    "apache-libcloud>=0.7.1",
+    "Jinja2>=2.6",
+    "PyYAML>=3.10",
+    "virtualenv>=1.7",
+    "certifi>=0.0.7",
+]
+
+if sys.version_info < (2, 7): 
+    requires.append('argparse>=1.2.1') 
 
 setup(
     name             = 'kraftwerk',
@@ -38,5 +45,5 @@ setup(
     package_data     = {'kraftwerk': find_package_data()},
     include_package_data = True,
     entry_points     = {'console_scripts': ['kraftwerk = kraftwerk.cli.main:main']},
-    install_requires = requirements,
+    install_requires = requires,
 )

@@ -1,6 +1,0 @@
-argparse
-PyYAML
-Jinja2
-apache-libcloud
-virtualenv
-certifi
