@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import logging
 import argparse
 
@@ -52,17 +53,17 @@ libcloud.security.CA_CERTS_PATH.append(DEFAULT_CA_BUNDLE_PATH)
 
 def command(function):
     """Decorator/wrapper to declare a function as a Kraftwerk CLI task."""
-    
+
     cmd_name = function.__name__.replace('_', '-')
     help = (function.__doc__ or '').rstrip('.') or None
     parser = subparsers.add_parser(cmd_name, help=help)
-    
+
     @wraps(function)
     def wrapper(config, args):
         logging.getLogger('kraftwerk').debug('Running kraftwerk.%s' % cmd_name)
         return function(config, args)
     wrapper.parser = parser
-    
+
     return wrapper
 
 class ProjectAction(argparse.Action):
